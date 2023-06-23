@@ -1,0 +1,15 @@
+{
+  "[json][jsonc][javascript]": {
+    "editor.detectIndentation": false,
+    "editor.insertSpaces": true,
+    "editor.quickSuggestions": {
+      "comments": "off",
+      "other": "on",
+      "strings": "off"
+    },
+    "editor.tabSize": 2
+  },
+  "editor.detectIndentation": false,
+  "editor.inlayHints.enabled": "off",
+  "files.insertFinalNewline": true
+}
