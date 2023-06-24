@@ -1,4 +1,6 @@
 """CSV generation related methods."""
+"""Author: spunk-developer <xspunk.developer@gmail.com>"""
+
 from csv     import DictWriter
 from pathlib import Path
 
