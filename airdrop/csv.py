@@ -2,9 +2,10 @@
 """Author: spunk-developer <xspunk.developer@gmail.com>"""
 
 from csv     import DictWriter
+from rich    import print
 from pathlib import Path
 
-def generate_csv(data: list[dict], path: str):
+def generate_csv(data: list[dict], path: str) -> bool:
 	"""Generates and writes given `data` dictionary into `path`.
 
 	Args:
@@ -13,9 +14,13 @@ def generate_csv(data: list[dict], path: str):
 	"""
 	if not path.endswith(".csv"):
 		path = path + ".csv"
-	with open(Path(path).resolve(), "w", encoding="UTF8", newline="") as file:
-		# Rendered CSV column headers. Must also be the same as the dictionary keys!
-		columns = ["Address", "SOLO", "XRP", "Ratio", "Split"]
-		writer = DictWriter(file, fieldnames=columns)
-		writer.writeheader()
-		writer.writerows(data)
+	try:
+		with open(Path(path).resolve(), "w", encoding="UTF8", newline="") as file:
+			# Rendered CSV column headers. Must also be the same as the dictionary keys!
+			columns = ["Address", "SOLO", "XRP", "Ratio", "Split"]
+			writer = DictWriter(file, fieldnames=columns)
+			writer.writeheader()
+			writer.writerows(data)
+			return True
+	except:
+		return False
