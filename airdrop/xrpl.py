@@ -52,7 +52,6 @@ def fetch_trustlines(address: str, client: WebsocketClient) -> list[(str, str)]:
 			if trustline["currency"] != "584E455400000000000000000000000000000000" or trustline["account"] in results:
 				continue
 			results.append(trustline["account"])
-			break
 		if "marker" not in response.result:
 			break
 		request  = AccountLines(account=address, ledger_index=response.result["ledger_index"], marker=response.result["marker"])
