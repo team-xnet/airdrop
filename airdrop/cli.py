@@ -34,13 +34,18 @@ def do_command_routine(mainnet: bool, address: str, csv: Union[None, str]):
 		trustlines = None
 		# Fetch trustline addresses. We fecth XRP & SOLO balances separately.
 		with console.status(f'[[info]WORKING[/info]] Fetching trustlines from address [prominent]{address}[/prominent]...', spinner="dots") as status:
-			status.start()
-			result = fetch_trustlines(address, client)
-			status.stop()
-			if result is None:
+			try:
+				status.start()
+				result = fetch_trustlines(address, client)
+				status.stop()
+				if result is None:
+					raise AssertionError
+				console.print(f'[[success]SUCCESS[/success]] Successfully fetched [prominent]{len(result)}[/prominent] trustlines set for issuing address [prominent]{address}[/prominent]')
+				trustlines = result
+			except:
+				status.stop()
 				console.print(f'[[error]FAIL[/error]] Failed fetching trustlines from address [prominent]{address}[/prominent]!')
-			console.print(f'[[success]SUCCESS[/success]] Successfully fetched [prominent]{len(result)}[/prominent] trustlines set for issuing address [prominent]{address}[/prominent]')
-			trustlines = result
+				return
 
 @init_cli.command(help="Executes program on live XRP ledger.")
 def mainnet(
