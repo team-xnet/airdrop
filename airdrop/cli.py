@@ -2,8 +2,10 @@
 """Author: spunk-developer <xspunk.developer@gmail.com>"""
 
 from rich.progress import Progress
+from datetime      import timedelta
 from typing 	   import Optional, Union
 from typer  	   import Option, Typer, Exit
+from time          import time
 
 from airdrop import console
 
@@ -32,17 +34,18 @@ def main(
 
 def do_command_routine(mainnet: bool, address: str, csv: Union[None, str]):
 	with get_client(mainnet) as client:
-		trustlines         = None
-		trustline_balances = []
+		trustlines            = None
+		trustline_balances    = []
 		# Fetch trustline addresses. We fecth XRP & SOLO balances separately.
 		with console.status(f'[[info]WORKING[/info]] Fetching trustlines from address [prominent]{address}[/prominent]...', spinner="dots") as status:
+			start = time()
 			try:
 				status.start()
 				result = fetch_trustlines(address, client)
 				status.stop()
 				if result is None:
 					raise AssertionError
-				console.print(f'[[success]SUCCESS[/success]] Successfully fetched [prominent]{len(result)}[/prominent] trustlines set for issuing address [prominent]{address}[/prominent]')
+				console.print(f'[[success]SUCCESS[/success]] Successfully fetched [prominent]{len(result)}[/prominent] trustlines set for issuing address [prominent]{address}[/prominent] in [prominent]{timedelta(seconds=int(time() - start))}[/prominent]')
 				trustlines = result
 			except:
 				status.stop()
@@ -51,7 +54,8 @@ def do_command_routine(mainnet: bool, address: str, csv: Union[None, str]):
 		if (trustlines is None):
 			return
 		with Progress(console=console) as progress:
-			task = progress.add_task(description="[[info]WORKING[/info]] Fetching account balances...", start=False, total=len(trustlines))
+			task    = progress.add_task(description="[[info]WORKING[/info]] Fetching account balances...", start=False, total=len(trustlines))
+			start   = time()
 			success = 0
 			failure = 0
 			progress.start_task(task)
@@ -61,9 +65,10 @@ def do_command_routine(mainnet: bool, address: str, csv: Union[None, str]):
 					progress.advance(task)
 					continue
 				try:
-					balances = fetch_account_balances(trustline, client)
+					balances_start = time()
+					balances       = fetch_account_balances(trustline, client)
 					trustline_balances.append(balances)
-					progress.console.print(f'[[success]SUCCESS[/success]] Successfully fetched account balance(s) for [prominent]{trustline}[/prominent]')
+					progress.console.print(f'[[success]SUCCESS[/success]] Successfully fetched account balance(s) for [prominent]{trustline}[/prominent] in [prominent]{timedelta(seconds=int(time() - balances_start))}[/prominent]')
 					progress.advance(task)
 					success += 1
 				except:
@@ -73,7 +78,7 @@ def do_command_routine(mainnet: bool, address: str, csv: Union[None, str]):
 					continue
 			progress.remove_task(task)
 			if success > failure:
-				progress.console.print(f'[[success]SUCCESS[/success]] Successfully fetched balances for [prominent]{success}[/prominent] trustlines, with [prominent]{failure}[/prominent] misses')
+				progress.console.print(f'[[success]SUCCESS[/success]] Successfully fetched balances for [prominent]{success}[/prominent] trustlines, with [prominent]{failure}[/prominent] misses in [prominent]{timedelta(seconds=int(time() - start))}[/prominent]')
 			else:
 				progress.console.print(f'[[error]FAIL[/error]] Failed fetching balances for [prominent]{failure}[/prominent] trustlines, with [prominent]{success}[/prominent] successful fetches')
 
