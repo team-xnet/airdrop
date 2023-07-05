@@ -1,11 +1,12 @@
 """XRPL related interaction methods."""
 """Author: spunk-developer <xspunk.developer@gmail.com>"""
 
-from xrpl.clients 						import WebsocketClient
 from xrpl.models.requests.account_lines import AccountLines
 from xrpl.models.requests.account_info  import AccountInfo
-from dataclasses                        import dataclass
-from typing 	  						import Optional
+from xrpl.models.requests.account_tx    import AccountTx
+from xrpl.utils.time_conversions        import posix_to_ripple_time
+from xrpl.clients 						import WebsocketClient
+from typing 	  						import Optional, Union
 
 # XRPL WebSocket client
 XRPL_CLIENT = None
@@ -23,7 +24,7 @@ def get_client(mainnet: Optional[bool]) -> WebsocketClient:
 	if XRPL_CLIENT is None:
 		url = "wss://s.altnet.rippletest.net"
 		if mainnet is True:
-			url = "wss://s1.ripple.com"
+			url = "wss://xrplcluster.com/"
 		XRPL_CLIENT = WebsocketClient(url)
 	return XRPL_CLIENT
 
@@ -48,11 +49,14 @@ def fetch_trustlines(address: str, client: WebsocketClient) -> list[(str, str)]:
 	results: list[str] = []
 	# We use a while loop due to having paginated responses.
 	while True:
+		found_trustline = False
 		for trustline in response.result["lines"]:
 			if trustline["currency"] != "584E455400000000000000000000000000000000" or trustline["account"] in results:
 				continue
 			results.append(trustline["account"])
-		if "marker" not in response.result:
+			found_trustline = True
+			break
+		if "marker" not in response.result or found_trustline is True:
 			break
 		request  = AccountLines(account=address, ledger_index=response.result["ledger_index"], marker=response.result["marker"])
 		response = client.request(request)
@@ -100,3 +104,36 @@ def fetch_account_balances(address: str, client: WebsocketClient) -> tuple[str, 
 		request  = AccountLines(account=address, ledger_index=response.result["ledger_index"], marker=response.result["marker"])
 		response = client.request(request)
 	return (address, balances)
+
+def fetch_account_tx_after_date(date: Union[float, int], address: str, client: WebsocketClient) -> list:
+	"""Fetches ALL transactions for a given XRPL account that occur after specified POSIX time.
+
+	Args:
+		date (Union[float, int]): POSIX time, returned by such methods as `time.time()`.
+		address (str): Public address for given account which to query for.
+		client (WebsocketClient): Request WebSocket client.
+
+	Raises:
+		AssertionError: If request fails for any reason
+
+	Returns:
+		list: A list of all transactions that occurred after given POSIX date. Empty if no transactions occurred at query time.
+	"""
+	request  = AccountTx(account=address, forward=True)
+	response = client.request(request)
+	# Obviously only working with validated data
+	if not response.is_successful() or not response.is_valid():
+		raise AssertionError
+	if not type(date) is int:
+		date = int(date)
+	# Relevant transactions are transactions that came *before* the airdrop date
+	parsed_date = posix_to_ripple_time(date)
+	relevant_tx = []
+	for transaction in response.result["transactions"]:
+		if transaction["validated"] is not True:
+			continue
+		transaction_date = transaction["tx"]["date"]
+		if transaction_date < parsed_date:
+			break
+		relevant_tx.append(transaction["tx"])
+	return relevant_tx
