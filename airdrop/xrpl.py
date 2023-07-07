@@ -129,11 +129,18 @@ def fetch_account_tx_after_date(date: Union[float, int], address: str, client: W
 	# Relevant transactions are transactions that came *before* the airdrop date
 	parsed_date = posix_to_ripple_time(date)
 	relevant_tx = []
-	for transaction in response.result["transactions"]:
-		if transaction["validated"] is not True:
-			continue
-		transaction_date = transaction["tx"]["date"]
-		if transaction_date < parsed_date:
+	while True:
+		should_break = False
+		for transaction in response.result["transactions"]:
+			if transaction["validated"] is not True:
+				continue
+			transaction_date = transaction["tx"]["date"]
+			if transaction_date < parsed_date:
+				should_break = True
+				break
+			relevant_tx.append(transaction["tx"])
+		if "marker" not in response.result or should_break is True:
 			break
-		relevant_tx.append(transaction["tx"])
+		request  = AccountTx(account=address, forward=True, ledger_index=response.result["ledger_index"], marker=response.result["marker"])
+		response = client.request(request)
 	return relevant_tx
