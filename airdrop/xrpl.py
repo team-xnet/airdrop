@@ -138,7 +138,7 @@ def fetch_account_tx_after_date(date: Union[float, int], address: str, client: W
 			if transaction_date < parsed_date:
 				should_break = True
 				break
-			relevant_tx.append(transaction["tx"])
+			relevant_tx.append(transaction)
 		if "marker" not in response.result or should_break is True:
 			break
 		request  = AccountTx(account=address, forward=True, ledger_index=response.result["ledger_index"], marker=response.result["marker"])
