@@ -2,6 +2,12 @@
 """Author: spunk-developer <xspunk.developer@gmail.com>"""
 from typing import Union
 
+TOTAL_BALANCES: dict[str, float] = { }
+
+AIRDROP_AMOUNT: Union[None, float, int] = None
+
+AIRDROP_YIELD_PER_TOKEN: Union[None, tuple[str, float]] = None
+
 def pick_balances_as_dict(balances: list[tuple[str, float]], pick: Union[str, list[str]]) -> dict[str, float]:
 	"""Filters a list of XRPL balances, returning only balances that have a matching token `id` in `pick` list.
 
@@ -25,3 +31,43 @@ def pick_balances_as_dict(balances: list[tuple[str, float]], pick: Union[str, li
 				picked_balances[id] = balance
 			continue
 	return picked_balances
+
+def update_budget(budget: Union[float, int]) -> bool:
+	"""Updates the total airdroppable budget.
+
+	Args:
+		budget (Union[float, int]): The budget of the total airdrop.
+
+	Returns:
+		bool: `True` if budget hasn't been set already, otherwise returns `False`.
+	"""
+	if type(AIRDROP_AMOUNT) is not None:
+		return False
+	AIRDROP_AMOUNT = budget
+	return True
+
+def increment_yield(id: str, amount: float) -> None:
+	"""Increments internal total balance for a given currency.
+
+	Args:
+		id (str): Currency identifier.
+		amount (float): The amount to increment by.
+	"""
+	if id in TOTAL_BALANCES:
+		TOTAL_BALANCES[id] += amount
+		return
+	TOTAL_BALANCES[id] = amount
+
+def calculate_total_yield(id: str) -> bool:
+	"""Calculates the total yield per token for the entire airdrop.
+
+	Args:
+		id (str): The identifier of the yielding token.
+
+	Returns:
+		bool: If the prequisites haven't been set, the function returns `False`. Otherwise `True`.
+	"""
+	if type(AIRDROP_YIELD_PER_TOKEN) is tuple or type(AIRDROP_AMOUNT) is None or id not in TOTAL_BALANCES:
+		return False
+	AIRDROP_YIELD_PER_TOKEN = (id, AIRDROP_AMOUNT / TOTAL_BALANCES[id])
+	return True
