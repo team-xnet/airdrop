@@ -7,12 +7,11 @@ from typing 	   import Optional, Union
 from typer  	   import Option, Typer, Exit
 from time          import time
 
-from airdrop import console
+from airdrop.xrpl import fetch_account_balances, fetch_trustlines, get_client
+from airdrop.calc import calculate_total_yield, pick_balances_as_dict, increment_yield, update_budget
+from airdrop      import __app_version__, __app_name__, console
 
 init_cli = Typer()
-
-from airdrop import __app_version__, __app_name__
-from airdrop.xrpl import fetch_account_balances, fetch_trustlines, get_client
 
 def get_version(value: bool) -> None:
 	if value:
@@ -32,10 +31,18 @@ def main(
 ) -> None:
 	return
 
-def do_command_routine(mainnet: bool, address: str, csv: Union[None, str]):
+# TODO(spunk-developer): Do pre-validation before the actual airdrop script starts. these would be:
+#  - In the case that an issuing address has authored multiple tokens, allow the user to pick which token is the target airdropped token from a list
+#  - Allow the user to set "rules", or perhaps pick a pre-defined algorithm? for the actual budget distribution calculation
+#  - Redo all user-facing communication
+def do_command_routine(mainnet: bool, address: str, csv: Union[None, str], token_id: str, amount: float):
+	if type(amount) is not float or amount == 0 or update_budget(amount) is not True:
+		console.print('[[error]FAIL[/error]] Please set variable "amount" to a valid number that is higher than [prominent]0[/prominent]!')
+		return
 	with get_client(mainnet) as client:
-		trustlines            = None
-		trustline_balances    = []
+		airdrop_start_time = time()
+		trustlines         = None
+		trustline_balances = []
 		# Fetch trustline addresses. We fecth XRP & SOLO balances separately.
 		with console.status(f'[[info]WORKING[/info]] Fetching trustlines from address [prominent]{address}[/prominent]...', spinner="dots") as status:
 			start = time()
@@ -51,8 +58,6 @@ def do_command_routine(mainnet: bool, address: str, csv: Union[None, str]):
 				status.stop()
 				console.print(f'[[error]FAIL[/error]] Failed fetching trustlines from address [prominent]{address}[/prominent]!')
 				return
-		if (trustlines is None):
-			return
 		with Progress(console=console) as progress:
 			task    = progress.add_task(description="[[info]WORKING[/info]] Fetching account balances...", start=False, total=len(trustlines))
 			start   = time()
@@ -80,15 +85,47 @@ def do_command_routine(mainnet: bool, address: str, csv: Union[None, str]):
 			if success > failure:
 				progress.console.print(f'[[success]SUCCESS[/success]] Successfully fetched balances for [prominent]{success}[/prominent] trustlines, with [prominent]{failure}[/prominent] misses in [prominent]{timedelta(seconds=int(time() - start))}[/prominent]')
 			else:
-				progress.console.print(f'[[error]FAIL[/error]] Failed fetching balances for [prominent]{failure}[/prominent] trustlines, with [prominent]{success}[/prominent] successful fetches')
-
+				progress.console.print(f'[[error]FAIL[/error]] Failed fetching balances for [prominent]{failure}[/prominent] trustlines, with [prominent]{success}[/prominent] successful fetches, aborting')
+				return
+		with console.status('[[info]WORKING[/info]] Calculating total airdrop yield...', spinner="dots") as status:
+			start   = time()
+			success = False
+			status.start()
+			for address, balances in trustline_balances:
+				try:
+					filtered_balances = pick_balances_as_dict(balances, token_id)
+					if token_id in filtered_balances:
+						increment_yield(token_id, filtered_balances[token_id])
+						if trustline_balances.index((address, balances)) == (len(trustline_balances) - 1):
+							success = True
+				except:
+					status.stop()
+					success = False
+					break
+			if success is True:
+				status.stop()
+				calculate_total_yield(token_id)
+				console.print(f'[[success]SUCCESS[/success]] Successfully calculated total airdrop yield in [prominent]{ timedelta(seconds=int(time() - start)) }[/prominent]')
+			else:
+				console.print(f'[[error]FAIL[/error]] Failed calculating total airdrop yield, aborting')
+				return
+		console.print(f'[[success]SUCCESS[/success]] Successfully computed airdrop in [prominent]{ timedelta(seconds=int(time() - airdrop_start_time)) }[/prominent]')
 
 @init_cli.command(help="Executes program on live XRP ledger.")
 def mainnet(
 	address: str = Option(
-		help="Specifies",
-		prompt="Enter token issuing address",
+		help="Specifies the issuing address for the token to be airdropped.",
+		prompt="(1/3) Enter token issuing address:",
 		prompt_required=True
+	),
+	token: str = Option(
+		help="Specifies the currency code for the token that airdrop recipients are required to hold to recieve airdrop yield.",
+		prompt="(2/3) Enter airdrop calculation currency code:",
+		prompt_required=True
+	),
+	amount: str = Option(
+		help="Specifies the total budget for the airdrop.",
+		prompt="(3/3) Enter total amount of tokens that would be airdropped:"
 	),
 	csv: Optional[str] = Option(
 		None,
@@ -97,14 +134,23 @@ def mainnet(
         help="Outputs CSV file containing calculated airdrop ratios and values.",
 	)
 ) -> None:
-	do_command_routine(True, address, csv)
+	do_command_routine(True, address, csv, token, float(amount))
 
 @init_cli.command(help="Executes program on TestNet for development and testing purpouses.")
 def testnet(
 	address: str = Option(
-		help="Specifies",
-		prompt="Enter token issuing address",
+		help="Specifies the issuing address for the token to be airdropped.",
+		prompt="(1/3) Enter token issuing address:",
 		prompt_required=True
+	),
+	token: str = Option(
+		help="Specifies the currency code for the token that airdrop recipients are required to hold to recieve airdrop yield.",
+		prompt="(2/3) Enter airdrop calculation currency code:",
+		prompt_required=True
+	),
+	amount: str = Option(
+		help="Specifies the total budget for the airdrop.",
+		prompt="(3/3) Enter total amount of tokens that would be airdropped:"
 	),
 	csv: Optional[str] = Option(
 		None,
@@ -114,4 +160,4 @@ def testnet(
 		prompt="Enter CSV file output path"
 	)
 ) -> None:
-	do_command_routine(False, address, csv)
+	do_command_routine(False, address, csv, token, float(amount))
