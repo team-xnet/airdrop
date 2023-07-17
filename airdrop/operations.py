@@ -5,13 +5,13 @@ def validate_supply_balance(input) -> float:
     """Validates any arbitrary `input` value to see if it is a number that is greater than 0.
 
     Args:
-        input (Any): Arbitrary
+        input (Any): Arbitrary input object which gets validated as a number and cast to a float.
 
     Raises:
-        RuntimeError: _description_
+        RuntimeError: If `input` value is not within range of `0` to `100000000000000000`.
 
     Returns:
-        float: _description_
+        float: `input` variable cast to a `float` type.
     """
 
     # We parse the actual input into a float or an int. If this fails, the error is raised to the caller.
