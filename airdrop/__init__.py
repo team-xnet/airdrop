@@ -14,7 +14,7 @@ CONSOLE_THEME = Theme(
         "error":     "bright_red bold",
         "info":      "bright_blue bold",
         "warn":      "bright_magenta bold"
-	}
+    }
 )
 
 console = Console(color_system="auto", theme=CONSOLE_THEME)
