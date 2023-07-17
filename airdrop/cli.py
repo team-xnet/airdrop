@@ -7,9 +7,10 @@ from typing 	   import Optional, Union
 from typer  	   import Option, Typer, Exit
 from time          import time
 
-from airdrop.xrpl import fetch_account_balances, fetch_trustlines, get_client
-from airdrop.calc import calculate_total_yield, pick_balances_as_dict, increment_yield, update_budget
-from airdrop      import __app_version__, __app_name__, console
+from airdrop.operations import validate_supply_balance
+from airdrop.xrpl       import fetch_account_balances, fetch_trustlines, get_client
+from airdrop.calc       import calculate_total_yield, pick_balances_as_dict, increment_yield, update_budget
+from airdrop            import __app_version__, __app_name__, console
 
 init_cli = Typer()
 
@@ -36,7 +37,7 @@ def main(
 #  - Allow the user to set "rules", or perhaps pick a pre-defined algorithm? for the actual budget distribution calculation
 #  - Redo all user-facing communication
 def do_command_routine(mainnet: bool, address: str, csv: Union[None, str], token_id: str, amount: float):
-	if type(amount) is not float or amount == 0 or update_budget(amount) is not True:
+	if amount == 0 or update_budget(amount) is not True:
 		console.print('[[error]FAIL[/error]] Please set variable "amount" to a valid number that is higher than [prominent]0[/prominent]!')
 		return
 	with get_client(mainnet) as client:
@@ -115,17 +116,17 @@ def do_command_routine(mainnet: bool, address: str, csv: Union[None, str], token
 def mainnet(
 	address: str = Option(
 		help="Specifies the issuing address for the token to be airdropped.",
-		prompt="(1/3) Enter token issuing address:",
+		prompt="(1/3) Enter token issuing address",
 		prompt_required=True
 	),
 	token: str = Option(
 		help="Specifies the currency code for the token that airdrop recipients are required to hold to recieve airdrop yield.",
-		prompt="(2/3) Enter airdrop calculation currency code:",
+		prompt="(2/3) Enter airdrop calculation currency code",
 		prompt_required=True
 	),
 	amount: str = Option(
 		help="Specifies the total budget for the airdrop.",
-		prompt="(3/3) Enter total amount of tokens that would be airdropped:"
+		prompt="(3/3) Enter total amount of tokens that would be airdropped"
 	),
 	csv: Optional[str] = Option(
 		None,
@@ -134,30 +135,14 @@ def mainnet(
         help="Outputs CSV file containing calculated airdrop ratios and values.",
 	)
 ) -> None:
-	do_command_routine(True, address, csv, token, float(amount))
 
-@init_cli.command(help="Executes program on TestNet for development and testing purpouses.")
-def testnet(
-	address: str = Option(
-		help="Specifies the issuing address for the token to be airdropped.",
-		prompt="(1/3) Enter token issuing address:",
-		prompt_required=True
-	),
-	token: str = Option(
-		help="Specifies the currency code for the token that airdrop recipients are required to hold to recieve airdrop yield.",
-		prompt="(2/3) Enter airdrop calculation currency code:",
-		prompt_required=True
-	),
-	amount: str = Option(
-		help="Specifies the total budget for the airdrop.",
-		prompt="(3/3) Enter total amount of tokens that would be airdropped:"
-	),
-	csv: Optional[str] = Option(
-		None,
-        "--csv",
-        "-c",
-        help="Outputs CSV file containing calculated airdrop ratios and values.",
-		prompt="Enter CSV file output path"
-	)
-) -> None:
-	do_command_routine(False, address, csv, token, float(amount))
+	# Supply balance validation
+	try:
+		validate_supply_balance(amount)
+	except TypeError as err:
+		console.print(f'[[error]FAIL[/error]] { err }')
+		return
+	except ValueError:
+		console.print(f'[[error]FAIL[/error]] Cannot convert value [prominent]"{ amount }"[/prominent] into a number, aborting')
+		return
+	do_command_routine(True, address, csv, token, amount)

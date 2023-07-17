@@ -41,7 +41,8 @@ def update_budget(budget: Union[float, int]) -> bool:
 	Returns:
 		bool: `True` if budget hasn't been set already, otherwise returns `False`.
 	"""
-	if type(AIRDROP_AMOUNT) is not None:
+	global AIRDROP_AMOUNT
+	if not isinstance(AIRDROP_AMOUNT, type(None)):
 		return False
 	AIRDROP_AMOUNT = budget
 	return True
@@ -53,6 +54,7 @@ def increment_yield(id: str, amount: float) -> None:
 		id (str): Currency identifier.
 		amount (float): The amount to increment by.
 	"""
+	global TOTAL_BALANCES
 	if id in TOTAL_BALANCES:
 		TOTAL_BALANCES[id] += amount
 		return
@@ -67,6 +69,7 @@ def calculate_total_yield(id: str) -> bool:
 	Returns:
 		bool: If the prequisites haven't been set, the function returns `False`. Otherwise `True`.
 	"""
+	global AIRDROP_YIELD_PER_TOKEN, AIRDROP_AMOUNT, TOTAL_BALANCES
 	if type(AIRDROP_YIELD_PER_TOKEN) is tuple or type(AIRDROP_AMOUNT) is None or id not in TOTAL_BALANCES:
 		return False
 	AIRDROP_YIELD_PER_TOKEN = (id, AIRDROP_AMOUNT / TOTAL_BALANCES[id])
