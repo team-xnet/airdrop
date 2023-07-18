@@ -4,6 +4,7 @@
 from rich.prompt import Prompt
 
 from airdrop.calc import update_budget
+from airdrop      import i18n, t
 
 def preflight_validate_supply_balance(input) -> None:
     """Validates any arbitrary `input` value to see if it is a number that is greater than 0.
@@ -16,20 +17,20 @@ def preflight_validate_supply_balance(input) -> None:
     """
 
     # In the case that balance wasn't passed into the CLI as a parameter, we ask the user directly.
-    input = Prompt.ask("Enter the total airdrop budget", default=0)
+    input = Prompt.ask(i18n.preflight.enter_balance, default=0)
 
     # We parse the actual input into a float or an int. If this fails, the error is raised to the caller.
     try:
         if type(input) is not (float | int):
             validated_input = float(input)
     except:
-        raise RuntimeError(f'Could not converty input "{ input }" into a number')
+        raise RuntimeError(t(i18n.preflight.error_conversion, value=input))
 
     # XRP minimum and maximum number enforcement.
     if validated_input <= 0:
-        raise RuntimeError(f'Input "{ input }" must be larger than 0')
+        raise RuntimeError(t(i18n.preflight.error_minimum, value=input))
     elif validated_input > 100000000000000000:
-        raise RuntimeError(f'Input "{ input }" cannot be larger than maximum allowed integer 100000000000000000')
+        raise RuntimeError(t(i18n.preflight.error_maximum, value=input))
 
     if not update_budget(validated_input):
-        raise RuntimeError("Cannot overwrite supply budget, as it has already been defined")
+        raise RuntimeError(i18n.preflight.enter_balance)

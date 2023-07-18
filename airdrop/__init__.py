@@ -1,7 +1,10 @@
 """XNET & XSPUNKS airdrop utility."""
 """Author: spunk-developer <xspunk.developer@gmail.com>"""
 
+from string import Template
+
 from rich.console import Console
+from dataclasses  import dataclass
 from rich.theme   import Theme
 
 __app_version__ = "0.1.0+alpha.1"
@@ -17,4 +20,22 @@ CONSOLE_THEME = Theme(
     }
 )
 
+@dataclass(frozen=True)
+class I18NPreflight():
+
+    # Input budget validation strings
+    enter_balance    = "Enter the total airdrop budget"
+    error_conversion = Template('Could not converty input "${value}" into a number')
+    error_overwrite  = "Cannot overwrite supply budget, as it has already been defined"
+    error_minimum    = Template('Input "${value}" must be larger than 0')
+    error_maximum    = Template('Input "${value}" cannot be larger than maximum allowed integer 100000000000000000')
+
+@dataclass(frozen=True)
+class I18NBase():
+    preflight = I18NPreflight()
+
 console = Console(color_system="auto", theme=CONSOLE_THEME)
+i18n    = I18NBase()
+
+def t(str: Template, **kwargs) -> str:
+    return str.substitute(kwargs)
