@@ -7,10 +7,10 @@ from typing        import Optional, Union
 from typer         import Option, Typer, Exit
 from time          import time
 
-from airdrop.operations import validate_supply_balance
-from airdrop.xrpl       import fetch_account_balances, fetch_trustlines, get_client
-from airdrop.calc       import calculate_total_yield, pick_balances_as_dict, increment_yield, update_budget
-from airdrop            import __app_version__, __app_name__, console
+from airdrop.preflight import preflight_validate_supply_balance
+from airdrop.xrpl      import fetch_account_balances, fetch_trustlines, get_client
+from airdrop.calc      import calculate_total_yield, pick_balances_as_dict, increment_yield
+from airdrop           import __app_version__, __app_name__, console
 
 init_cli = Typer()
 
@@ -36,10 +36,7 @@ def main(
 #  - In the case that an issuing address has authored multiple tokens, allow the user to pick which token is the target airdropped token from a list
 #  - Allow the user to set "rules", or perhaps pick a pre-defined algorithm? for the actual budget distribution calculation
 #  - Redo all user-facing communication
-def do_command_routine(address: str, csv: Union[None, str], token_id: str, amount: float):
-    if amount == 0 or update_budget(amount) is not True:
-        console.print('[[error]FAIL[/error]] Please set variable "amount" to a valid number that is higher than [prominent]0[/prominent]!')
-        return
+def do_command_routine(address: str, csv: Union[None, str], token_id: str):
     with get_client() as client:
         airdrop_start_time = time()
         trustlines         = None
@@ -135,14 +132,14 @@ def mainnet(
         help="Outputs CSV file containing calculated airdrop ratios and values.",
     )
 ) -> None:
-
-    # Supply balance validation
     try:
-        validated_amount = validate_supply_balance(amount)
-    except TypeError as err:
+        preflight_validate_supply_balance(amount)
+
+    except RuntimeError as err:
         console.print(f'[[error]FAIL[/error]] { err }')
         return
-    except ValueError:
-        console.print(f'[[error]FAIL[/error]] Cannot convert value [prominent]"{ amount }"[/prominent] into a number, aborting')
+    except:
+        console.print('[[error]FAIL[/error]] Internal error occurred. Please make sure to scream at @spunkdeveloper on Twitter for being an idiot.')
         return
-    do_command_routine(address, csv, token, validated_amount)
+
+    do_command_routine(address, csv, token)
