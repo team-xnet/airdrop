@@ -1,10 +1,9 @@
 """Airdrop invocation entrypoint."""
 """Author: spunk-developer <xspunk.developer@gmail.com>"""
 
-from airdrop import __app_name__, cli
+from typer import run
 
-def main():
-    cli.init_cli(prog_name=__app_name__)
+from airdrop.cli import main
 
 if __name__ == "__main__":
-    main()
+    run(main)

@@ -3,8 +3,9 @@
 
 from rich.progress import Progress
 from datetime      import timedelta
+from pathlib       import Path
 from typing        import Optional, Union
-from typer         import Option, Typer, Exit
+from typer         import Option, Exit
 from time          import time
 
 from airdrop.preflight import preflight_validate_supply_balance
@@ -12,25 +13,58 @@ from airdrop.xrpl      import fetch_account_balances, fetch_trustlines, get_clie
 from airdrop.calc      import calculate_total_yield, pick_balances_as_dict, increment_yield
 from airdrop           import __app_version__, __app_name__, console
 
-init_cli = Typer()
-
 def get_version(value: bool) -> None:
     if value:
         console.print(f'{__app_name__} v{ __app_version__ }')
         raise Exit()
 
-@init_cli.callback()
 def main(
+    issuing_address: Optional[str] = Option(
+        None,
+        "--issuing-address",
+        "-i",
+        help="Specifies the issuing address for the token to be airdropped. This address is also used to fetch a list of all trustlines set against the airdropped token, which is then used to calculate the total yield per token.",
+    ),
+    yielding_address: Optional[str] = Option(
+        None,
+        "--yielding-address",
+        "-y",
+        help="Specifies the the issuing address for the token that is used to calculate the actual airdrop distribution (Issuing token per yield token) itself.",
+    ),
+    budget: Optional[float] = Option(
+        None,
+        "--budget",
+        "-b",
+        help="Specifies the total airdrop supply budget."
+    ),
+    csv: Optional[Path] = Option(
+        None,
+        "--csv",
+        "-c",
+        help="Specifies the output CSV file path.",
+        resolve_path=True,
+        file_okay=True,
+        dir_okay=False,
+        writable=True
+    ),
     version: Optional[bool] = Option(
         None,
         "--version",
         "-v",
-        help="Show Airdrop's version before exiting the program.",
+        help="Show Airdrop's version and exit.",
         callback=get_version,
         is_eager=True
     )
 ) -> None:
-    return
+    try:
+        preflight_validate_supply_balance(budget)
+
+    except RuntimeError as err:
+        console.print(f'[[error]FAIL[/error]] { err }')
+        return
+    except:
+        console.print('[[error]FAIL[/error]] Internal error occurred. Please make sure to scream at @spunkdeveloper on Twitter for being an idiot.')
+        return
 
 # TODO(spunk-developer): Do pre-validation before the actual airdrop script starts. these would be:
 #  - In the case that an issuing address has authored multiple tokens, allow the user to pick which token is the target airdropped token from a list
@@ -108,38 +142,3 @@ def do_command_routine(address: str, csv: Union[None, str], token_id: str):
                 console.print(f'[[error]FAIL[/error]] Failed calculating total airdrop yield, aborting')
                 return
         console.print(f'[[success]SUCCESS[/success]] Successfully computed airdrop in [prominent]{ timedelta(seconds=int(time() - airdrop_start_time)) }[/prominent]')
-
-@init_cli.command(help="Executes program on live XRP ledger.")
-def mainnet(
-    address: str = Option(
-        help="Specifies the issuing address for the token to be airdropped.",
-        prompt="(1/3) Enter token issuing address",
-        prompt_required=True
-    ),
-    token: str = Option(
-        help="Specifies the currency code for the token that airdrop recipients are required to hold to recieve airdrop yield.",
-        prompt="(2/3) Enter airdrop calculation currency code",
-        prompt_required=True
-    ),
-    amount: str = Option(
-        help="Specifies the total budget for the airdrop.",
-        prompt="(3/3) Enter total amount of tokens that would be airdropped"
-    ),
-    csv: Optional[str] = Option(
-        None,
-        "--csv",
-        "-c",
-        help="Outputs CSV file containing calculated airdrop ratios and values.",
-    )
-) -> None:
-    try:
-        preflight_validate_supply_balance(amount)
-
-    except RuntimeError as err:
-        console.print(f'[[error]FAIL[/error]] { err }')
-        return
-    except:
-        console.print('[[error]FAIL[/error]] Internal error occurred. Please make sure to scream at @spunkdeveloper on Twitter for being an idiot.')
-        return
-
-    do_command_routine(address, csv, token)
