@@ -36,11 +36,11 @@ def main(
 #  - In the case that an issuing address has authored multiple tokens, allow the user to pick which token is the target airdropped token from a list
 #  - Allow the user to set "rules", or perhaps pick a pre-defined algorithm? for the actual budget distribution calculation
 #  - Redo all user-facing communication
-def do_command_routine(mainnet: bool, address: str, csv: Union[None, str], token_id: str, amount: float):
+def do_command_routine(address: str, csv: Union[None, str], token_id: str, amount: float):
     if amount == 0 or update_budget(amount) is not True:
         console.print('[[error]FAIL[/error]] Please set variable "amount" to a valid number that is higher than [prominent]0[/prominent]!')
         return
-    with get_client(mainnet) as client:
+    with get_client() as client:
         airdrop_start_time = time()
         trustlines         = None
         trustline_balances = []
@@ -145,4 +145,4 @@ def mainnet(
     except ValueError:
         console.print(f'[[error]FAIL[/error]] Cannot convert value [prominent]"{ amount }"[/prominent] into a number, aborting')
         return
-    do_command_routine(True, address, csv, token, validated_amount)
+    do_command_routine(address, csv, token, validated_amount)
