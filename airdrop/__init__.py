@@ -23,6 +23,8 @@ CONSOLE_THEME = Theme(
 @dataclass(frozen=True)
 class I18NPreflight():
 
+    banner_subtitle = "Made using XRP, Python, and a LOT of coffee by XNET."
+
     # Input budget validation strings
     enter_balance    = "Enter the total airdrop budget"
     error_conversion = Template('[[error]FAIL[/error]] Could not converty input "${value}" into a number')

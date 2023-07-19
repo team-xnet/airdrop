@@ -2,10 +2,42 @@
 """Author: spunk-developer <xspunk.developer@gmail.com>"""
 
 from rich.prompt import Prompt
+from rich.panel  import Panel
+from rich.text   import Text
 from typer       import Exit
+
+from rich.align import Align
 
 from airdrop.calc import update_budget
 from airdrop      import console, i18n, t
+
+def preflight_print_banner() -> None:
+    """Generates and prints the Airdrop application banner.
+
+    Raises:
+        Exit: If for some reason the banner generation fails, or console environment is messed up.
+    """
+
+    try:
+        rendered_banner = Text.assemble(
+            ("__   ___   _ ______ _______            _         _                 \n", "#902EF4"),
+            ("\ \ / / \ | |  ____|__   __|     /\   (_)       | |                \n", "#1B6AFF"),
+            (" \ V /|  \| | |__     | |       /  \   _ _ __ __| |_ __ ___  _ __  \n", "#008EFF"),
+            ("  > < | . ` |  __|    | |      / /\ \ | | '__/ _` | '__/ _ \| '_ \ \n", "#00AAFF"),
+            (" / . \| |\  | |____   | |     / ____ \| | | | (_| | | | (_) | |_) |\n", "#00ACFF"),
+            ("/_/ \_\_| \_|______|  |_|    /_/    \_\_|_|  \__,_|_|  \___/| .__/ \n", "#00D5FF"),
+            ("                                                            | |    \n", "#00E7FD"),
+            ("                                                            |_|    \n", "#57F6F0"),
+
+            overflow="crop",
+            no_wrap=True
+        )
+
+        console.print(Panel(Align(rendered_banner, "center"), subtitle=i18n.preflight.banner_subtitle, subtitle_align="left", border_style="#1b6aff"))
+
+    # If an error happened for *any* reason, we can safely assume the console environment is completely fucked and unusable.
+    except:
+        raise Exit()
 
 def preflight_validate_supply_balance(input) -> None:
     """Validates any arbitrary `input` value to see if it is a number that is greater than 0.
