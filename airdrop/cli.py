@@ -56,15 +56,7 @@ def main(
         is_eager=True
     )
 ) -> None:
-    try:
-        preflight_validate_supply_balance(budget)
-
-    except RuntimeError as err:
-        console.print(f'[[error]FAIL[/error]] { err }')
-        return
-    except:
-        console.print('[[error]FAIL[/error]] Internal error occurred. Please make sure to scream at @spunkdeveloper on Twitter for being an idiot.')
-        return
+    preflight_validate_supply_balance(budget)
 
 # TODO(spunk-developer): Do pre-validation before the actual airdrop script starts. these would be:
 #  - In the case that an issuing address has authored multiple tokens, allow the user to pick which token is the target airdropped token from a list

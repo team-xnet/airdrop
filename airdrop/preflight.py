@@ -2,9 +2,10 @@
 """Author: spunk-developer <xspunk.developer@gmail.com>"""
 
 from rich.prompt import Prompt
+from typer       import Exit
 
 from airdrop.calc import update_budget
-from airdrop      import i18n, t
+from airdrop      import console, i18n, t
 
 def preflight_validate_supply_balance(input) -> None:
     """Validates any arbitrary `input` value to see if it is a number that is greater than 0.
@@ -24,13 +25,17 @@ def preflight_validate_supply_balance(input) -> None:
         if type(input) is not (float | int):
             validated_input = float(input)
     except:
-        raise RuntimeError(t(i18n.preflight.error_conversion, value=input))
+        console.print(t(i18n.preflight.error_conversion, value=input))
+        raise Exit()
 
     # XRP minimum and maximum number enforcement.
     if validated_input <= 0:
-        raise RuntimeError(t(i18n.preflight.error_minimum, value=input))
+        console.print(t(i18n.preflight.error_minimum, value=input))
+        raise Exit()
     elif validated_input > 100000000000000000:
-        raise RuntimeError(t(i18n.preflight.error_maximum, value=input))
+        console.print(t(i18n.preflight.error_maximum, value=input))
+        raise Exit()
 
     if not update_budget(validated_input):
-        raise RuntimeError(i18n.preflight.enter_balance)
+        console.print(i18n.preflight.error_overwrite)
+        raise Exit()

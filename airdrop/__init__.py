@@ -25,10 +25,10 @@ class I18NPreflight():
 
     # Input budget validation strings
     enter_balance    = "Enter the total airdrop budget"
-    error_conversion = Template('Could not converty input "${value}" into a number')
-    error_overwrite  = "Cannot overwrite supply budget, as it has already been defined"
-    error_minimum    = Template('Input "${value}" must be larger than 0')
-    error_maximum    = Template('Input "${value}" cannot be larger than maximum allowed integer 100000000000000000')
+    error_conversion = Template('[[error]FAIL[/error]] Could not converty input "${value}" into a number')
+    error_overwrite  = "[[error]FAIL[/error]] Cannot overwrite supply budget, as it has already been defined"
+    error_minimum    = Template('[[error]FAIL[/error]] Input "${value}" must be larger than 0')
+    error_maximum    = Template('[[error]FAIL[/error]] Input "${value}" cannot be larger than maximum allowed integer 100000000000000000')
 
 @dataclass(frozen=True)
 class I18NBase():
