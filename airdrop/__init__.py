@@ -23,10 +23,18 @@ CONSOLE_THEME = Theme(
 @dataclass(frozen=True)
 class I18NPreflight():
 
-    banner_subtitle = "Made using XRP, Python, and a LOT of coffee by XNET."
+    # Rendered banner title
+    banner_subtitle    = "Made using XRP, Python, and a LOT of coffee by XNET."
+    banner_description = "Thank you for using XNET Airdrop! Airdrop is a small utility program built to make the most tedious aspect of initial token distribution (Commonly known as airdropping) easier — The calculation aspect of it. Airdrop will automatically fetch all trustlines set against the desired currency so it can then calculate the total yield per trustline token, which is then finally filtered and organized into a table for you to use as the total distribution table for the distribution itself.\n\n"
+    banner_note        = "Airdrop does NOT require or send any token of any kind. It is just an utility that does the required math for you, and formats the resulting data into an easy-to-use format.\n\n"
+    banner_disclaimer  = "DISCLAIMER: We (XNET and all XNET affiliated entities) are not responsible for any loss of funds, or any damages of any kind that result in the use of this program. We also ask all users to double check all generated output for validity and correctness. We do not guarantee the resulting data of any kind being factually correct. By using this software you agree to these terms.\n"
+
+    # Metadata fetch
+    metadata_fetch     = "[[info]WORKING[/info]]  Fetching prequisite metadata..."
+    error_fetch_failed = "[[error]FAIL[/error]] Failed fetching prequisite metadata. Make sure you have an active internet connection, and that XRPLMeta services are available."
 
     # Input budget validation strings
-    enter_balance    = "Enter the total airdrop budget"
+    enter_balance    = Template('[prominent](${step}/${maximum})[prominent] Enter the total airdrop budget')
     error_conversion = Template('[[error]FAIL[/error]] Could not converty input "${value}" into a number')
     error_overwrite  = "[[error]FAIL[/error]] Cannot overwrite supply budget, as it has already been defined"
     error_minimum    = Template('[[error]FAIL[/error]] Input "${value}" must be larger than 0')
