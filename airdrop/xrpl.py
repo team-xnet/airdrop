@@ -4,9 +4,31 @@
 from xrpl.models.requests.account_lines import AccountLines
 from xrpl.models.requests.account_info  import AccountInfo
 from xrpl.clients                       import WebsocketClient
+from typing                             import Union
 
-# XRPL WebSocket client
-XRPL_CLIENT = None
+SELECTED_TRUSTLINE: Union[None, tuple[str, str]] = None
+
+XRPL_CLIENT:        Union[None, WebsocketClient] = None
+
+def update_issuing_metadata(address: str, currency: str) -> bool:
+    """Updates source issuing address if it hasn't been set already.
+
+    Args:
+        address (str): Source issuing address.
+        currency (str): Target token identifier.
+
+    Returns:
+        bool: `True` if issuing data hasn't been set, otherwise returns `False`.
+    """
+
+    global SELECTED_TRUSTLINE
+
+    if not isinstance(SELECTED_TRUSTLINE, type(None)):
+        return False
+
+    SELECTED_TRUSTLINE = (address, currency)
+
+    return True
 
 def get_client() -> WebsocketClient:
     """Returns an active XRPL WebSocket client, or creates a new one if no active client exists.
