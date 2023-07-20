@@ -8,6 +8,8 @@ from typing                             import Union
 
 SELECTED_TRUSTLINE: Union[None, tuple[str, str]] = None
 
+YIELDING_TOKEN:     Union[None, str]             = None
+
 XRPL_CLIENT:        Union[None, WebsocketClient] = None
 
 def update_issuing_metadata(address: str, currency: str) -> bool:
@@ -30,6 +32,25 @@ def update_issuing_metadata(address: str, currency: str) -> bool:
 
     return True
 
+def update_yielding_token(currency: str) -> bool:
+    """Updates the currency identifier which we use to calculate the total yield per token for the entire airdrop.
+
+    Args:
+        currency (str): Currency ID to update with.
+
+    Returns:
+        bool: `True` if currency identifier hasn't been set, otherwise returns `False`.
+    """
+
+    global YIELDING_TOKEN
+
+    if not isinstance(YIELDING_TOKEN, type(None)):
+        return False
+
+    YIELDING_TOKEN = currency
+
+    return True
+
 def get_client() -> WebsocketClient:
     """Returns an active XRPL WebSocket client, or creates a new one if no active client exists.
 
@@ -37,8 +58,10 @@ def get_client() -> WebsocketClient:
         WebsocketClient: XRPL API WebSocket client.
     """
     global XRPL_CLIENT
-    if XRPL_CLIENT is None:
+
+    if not isinstance(XRPL_CLIENT, type(None)):
         XRPL_CLIENT = WebsocketClient("wss://xrplcluster.com/")
+
     return XRPL_CLIENT
 
 def fetch_trustlines(address: str, client: WebsocketClient) -> list[(str, str)]:

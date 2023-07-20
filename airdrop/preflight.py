@@ -10,7 +10,7 @@ from requests     import get
 from typer        import Exit
 
 from airdrop.calc import update_budget
-from airdrop.xrpl import update_issuing_metadata
+from airdrop.xrpl import update_issuing_metadata, update_yielding_token
 from airdrop      import console, i18n, t
 
 REQUIRED_PARAMS_MISSING = 0
@@ -104,12 +104,14 @@ def preflight_fetch_metadata(issuing_address, yielding_address, budget, csv) -> 
 
                     XRPL_METADATA[issuer].append((id, name))
 
-                if response["count"] <= iterations:
-                    break
+                # if response["count"] <= iterations:
+                #     break
+                break
 
                 response = get("https://s1.xrplmeta.org/tokens", params={ "limit": iter_step, "trust_level": [ 1, 2, 3 ], "offset": iterations }).json()
                 iterations += iter_step
 
+            console.print(XRPL_METADATA)
             status.stop()
 
     except:
@@ -173,6 +175,74 @@ def preflight_validate_issuing_address(address) -> None:
     if not update_issuing_metadata(address, target_token_id):
         console.print(t(i18n.preflight.error_issuer_overwrite, address=address))
         raise Exit()
+
+def preflight_validate_yielding_address(address) -> None:
+    """Validates the "yield" address for the airdrop. Optionally allows user to specify the yield address as XRP.
+
+    Args:
+        address (str): Actual address, or just "XRP".
+
+    Raises:
+        Exit: If yielding address doesn't exist, or target token has already been set.
+    """
+
+    global REQUIRED_PARAMS_MISSING, REQUIRED_PARAMS_VISITED
+
+    REQUIRED_PARAMS_VISITED += 1
+
+    if isinstance(address, type(None)):
+        address = Prompt.ask(t(i18n.preflight.enter_yielding, step=REQUIRED_PARAMS_VISITED, maximum=REQUIRED_PARAMS_MISSING))
+        token_id = None
+
+        if address not in XRPL_METADATA:
+
+            if address.lower() != "xrp":
+                console.log(t(i18n.preflight.error_issuer_invalid, address=address))
+                raise Exit()
+
+            token_id = "XRP"
+
+        else:
+            issued_tokens = XRPL_METADATA[address]
+
+            issued_tokens_len = len(issued_tokens)
+
+            console.print(issued_tokens_len)
+
+            if issued_tokens_len >= 2:
+
+                choice_list = ""
+                choice_idx  = [ ]
+                choices     = [ ]
+                idx         = 0
+
+                for id, name in XRPL_METADATA[address]:
+
+                    newline = "\n"
+                    idx    += 1
+
+                    choice_idx.append(f'{ idx }')
+                    choices.append(id)
+
+                    if idx == len(XRPL_METADATA[address]):
+                        newline = ""
+
+                    if type(name) is str:
+                        choice_list += f"{ idx }: { name }{ newline }"
+                        continue
+
+                    choice_list += f"{ idx }: { id }{ newline }"
+
+                chosen_idx = IntPrompt.ask(t(i18n.preflight.choose_token, tokens=choice_list, total=issued_tokens_len), choices=choice_idx)
+                token_id = choices[chosen_idx - 1]
+
+            else:
+                token_id = XRPL_METADATA[address][0]
+
+    if not update_yielding_token(token_id):
+        console.log(t(i18n.preflight.error_yielding_voerwrite, address=address))
+        raise Exit()
+
 
 def preflight_validate_supply_balance(input) -> None:
     """Validates any arbitrary `input` value to see if it is a number that is greater than 0.

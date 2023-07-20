@@ -8,7 +8,7 @@ from typing        import Optional, Union
 from typer         import Option, Exit
 from time          import time
 
-from airdrop.preflight import preflight_validate_issuing_address, preflight_validate_supply_balance, preflight_fetch_metadata, preflight_print_banner
+from airdrop.preflight import preflight_validate_yielding_address, preflight_validate_issuing_address, preflight_validate_supply_balance, preflight_fetch_metadata, preflight_print_banner
 from airdrop.xrpl      import fetch_account_balances, fetch_trustlines, get_client
 from airdrop.calc      import calculate_total_yield, pick_balances_as_dict, increment_yield
 from airdrop           import __app_version__, __app_name__, console
@@ -59,6 +59,7 @@ def main(
     preflight_print_banner()
     preflight_fetch_metadata(issuing_address, yielding_address, budget, csv)
     preflight_validate_issuing_address(issuing_address)
+    preflight_validate_yielding_address(yielding_address)
     preflight_validate_supply_balance(budget)
 
 # TODO(spunk-developer): Do pre-validation before the actual airdrop script starts. these would be:

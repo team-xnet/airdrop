@@ -33,11 +33,15 @@ class I18NPreflight():
     metadata_fetch     = "[[info]WORKING[/info]] Fetching prequisite metadata..."
     error_fetch_failed = "[[error]FAIL[/error]] Failed fetching prequisite metadata. Make sure you have an active internet connection, and that XRPLMeta services are available."
 
+    # Input yielding address
+    enter_yielding           = Template('[prominent](${step}/${maximum})[/prominent] Enter yield token issuing address or "XRP" for XRP yield')
+    error_yielding_voerwrite = Template('[[error]FAIL[/error]] Yielding issuing address "${address}" cannot be set, as overwriting the yielding issuing address is forbidden')
+
     # Input issuing address
-    choose_token           = Template('We detected [prominent]${total}[/prominent] tokens issued by the source address:\n\n${tokens}\n\nPlease enter the number of one from the list above')
+    choose_token           = Template('We detected [prominent]${total}[/prominent] tokens issued by address [prominentb}${address}[/prominent}:\n\n${tokens}\n\nPlease enter the number of one from the list above')
     enter_issuer           = Template('[prominent](${step}/${maximum})[/prominent] Enter source token issuing address')
-    error_issuer_invalid   = Template('[[error]FAIL[/error]] Source issuing address "${address}" isn\'t a known token issuing address. Please make sure you have entered the address correctly, and that one or more tokens issued has a trust level of 1 or greater on the XRPL')
-    error_issuer_overwrite = Template('[[error]FAIL[/error]]  Source issuing address "${address}" cannot be set, as overwriting the source issuing address is forbidden')
+    error_issuer_invalid   = Template('[[error]FAIL[/error]] Issuing address "${address}" isn\'t a known token issuing address. Please make sure you have entered the address correctly, and that one or more tokens issued by this address has a trust level of 1 or greater on the XRPL')
+    error_issuer_overwrite = Template('[[error]FAIL[/error]] Source issuing address "${address}" cannot be set, as overwriting the source issuing address is forbidden')
 
     # Input budget validation
     enter_balance    = Template('[prominent](${step}/${maximum})[/prominent] Enter the total airdrop budget')
