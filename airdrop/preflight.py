@@ -19,6 +19,7 @@ REQUIRED_PARAMS_VISITED = 0
 
 XRPL_METADATA: dict[str, list[tuple[str, str]]] = { }
 
+
 def preflight_print_banner() -> None:
     """Generates and prints the Airdrop application banner.
 
@@ -47,6 +48,7 @@ def preflight_print_banner() -> None:
     # If an error happened for *any* reason, we can safely assume the console environment is completely fucked and unusable.
     except:
         raise Exit()
+
 
 def preflight_fetch_metadata(issuing_address, yielding_address, budget, csv) -> None:
     """Firstly sets internal flags for required input variables, then fetches ALL token metadata from XRPLMeta.
@@ -104,19 +106,18 @@ def preflight_fetch_metadata(issuing_address, yielding_address, budget, csv) -> 
 
                     XRPL_METADATA[issuer].append((id, name))
 
-                # if response["count"] <= iterations:
-                #     break
-                break
+                if response["count"] <= iterations:
+                    break
 
                 response = get("https://s1.xrplmeta.org/tokens", params={ "limit": iter_step, "trust_level": [ 1, 2, 3 ], "offset": iterations }).json()
                 iterations += iter_step
 
-            console.print(XRPL_METADATA)
             status.stop()
 
     except:
         console.print(i18n.preflight.error_fetch_failed)
         raise Exit()
+
 
 def preflight_validate_issuing_address(address) -> None:
     """Validates & sets the source issuing address, allowing the user to pick which issued token they wish to use.
@@ -133,10 +134,10 @@ def preflight_validate_issuing_address(address) -> None:
     REQUIRED_PARAMS_VISITED += 1
 
     if isinstance(address, type(None)):
-        address = Prompt.ask(t(i18n.preflight.enter_issuer, step=REQUIRED_PARAMS_VISITED, maximum=REQUIRED_PARAMS_MISSING))
+        address = Prompt.ask(t(i18n.preflight.enter_issuer, address=address, step=REQUIRED_PARAMS_VISITED, maximum=REQUIRED_PARAMS_MISSING))
 
     if address not in XRPL_METADATA:
-        console.log(t(i18n.preflight.error_issuer_invalid, address=address))
+        console.print(t(i18n.preflight.error_issuer_invalid, address=address))
         raise Exit()
 
     issued_tokens_len = len(XRPL_METADATA[address])
@@ -166,7 +167,7 @@ def preflight_validate_issuing_address(address) -> None:
 
             choice_list += f"{ idx }: { id }{ newline }"
 
-        chosen_idx = IntPrompt.ask(t(i18n.preflight.choose_token, tokens=choice_list, total=issued_tokens_len), choices=choice_idx)
+        chosen_idx = IntPrompt.ask(t(i18n.preflight.choose_token, address=address, tokens=choice_list, total=issued_tokens_len), choices=choice_idx)
         target_token_id = choices[chosen_idx - 1]
 
     else:
@@ -175,6 +176,7 @@ def preflight_validate_issuing_address(address) -> None:
     if not update_issuing_metadata(address, target_token_id):
         console.print(t(i18n.preflight.error_issuer_overwrite, address=address))
         raise Exit()
+
 
 def preflight_validate_yielding_address(address) -> None:
     """Validates the "yield" address for the airdrop. Optionally allows user to specify the yield address as XRP.
@@ -197,7 +199,7 @@ def preflight_validate_yielding_address(address) -> None:
         if address not in XRPL_METADATA:
 
             if address.lower() != "xrp":
-                console.log(t(i18n.preflight.error_issuer_invalid, address=address))
+                console.print(t(i18n.preflight.error_issuer_invalid, address=str(address)))
                 raise Exit()
 
             token_id = "XRP"
@@ -233,14 +235,14 @@ def preflight_validate_yielding_address(address) -> None:
 
                     choice_list += f"{ idx }: { id }{ newline }"
 
-                chosen_idx = IntPrompt.ask(t(i18n.preflight.choose_token, tokens=choice_list, total=issued_tokens_len), choices=choice_idx)
+                chosen_idx = IntPrompt.ask(t(i18n.preflight.choose_token, address=str(address), tokens=choice_list, total=issued_tokens_len), choices=choice_idx)
                 token_id = choices[chosen_idx - 1]
 
             else:
                 token_id = XRPL_METADATA[address][0]
 
     if not update_yielding_token(token_id):
-        console.log(t(i18n.preflight.error_yielding_voerwrite, address=address))
+        console.print(t(i18n.preflight.error_yielding_overwrite, address=address))
         raise Exit()
 
 
