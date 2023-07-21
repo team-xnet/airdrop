@@ -6,11 +6,32 @@ from xrpl.models.requests.account_info  import AccountInfo
 from xrpl.clients                       import WebsocketClient
 from typing                             import Union
 
-SELECTED_TRUSTLINE: Union[None, tuple[str, str]] = None
+SELECTED_TRUSTLINE: Union[None, tuple[str, str]]              = None
 
-YIELDING_TOKEN:     Union[None, str]             = None
+YIELDING_TOKEN:     Union[None, tuple[str, Union[None, str]]] = None
 
-XRPL_CLIENT:        Union[None, WebsocketClient] = None
+XRPL_CLIENT:        Union[None, WebsocketClient]              = None
+
+def get_issuer() -> Union[None, tuple[str, str]]:
+    """Returns the current state for the issuer token.
+
+    Returns:
+        Union[None, tuple[str, str]]: Current issuer token state.
+    """
+
+    global SELECTED_TRUSTLINE
+    return SELECTED_TRUSTLINE
+
+
+def get_yielding() -> Union[None, tuple[str, str]]:
+    """Returns the current state for the yielding token.
+
+    Returns:
+        Union[None, tuple[str, str]]: Current yielding token state.
+    """
+
+    global YIELDING_TOKEN
+    return YIELDING_TOKEN
 
 def update_issuing_metadata(address: str, currency: str) -> bool:
     """Updates source issuing address if it hasn't been set already.
@@ -32,7 +53,7 @@ def update_issuing_metadata(address: str, currency: str) -> bool:
 
     return True
 
-def update_yielding_token(currency: str) -> bool:
+def update_yielding_token(currency: str, name: Union[None, str]) -> bool:
     """Updates the currency identifier which we use to calculate the total yield per token for the entire airdrop.
 
     Args:
@@ -47,7 +68,7 @@ def update_yielding_token(currency: str) -> bool:
     if not isinstance(YIELDING_TOKEN, type(None)):
         return False
 
-    YIELDING_TOKEN = currency
+    YIELDING_TOKEN = (currency, name)
 
     return True
 

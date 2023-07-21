@@ -65,7 +65,7 @@ def is_path_valid(pathname: str) -> bool:
                     if exc.winerror == 123:
                         return False
 
-                elif exc.errno in { ENAMETOOLONG, ERANGE}:
+                elif exc.errno in { ENAMETOOLONG, ERANGE }:
                     return False
 
     except TypeError as exc:
@@ -83,9 +83,9 @@ def generate_csv(data: list[dict], path: str) -> bool:
         path (str): Output path for the CSV file. Must also include the
     """
 
-    global CSV_OUTPUT_PATH
+    csv_path = get_csv_path()
 
-    if isinstance(CSV_OUTPUT_PATH, type(None)):
+    if isinstance(csv_path, type(None)):
         return
 
     try:
@@ -97,3 +97,13 @@ def generate_csv(data: list[dict], path: str) -> bool:
             return True
     except:
         return False
+
+def get_csv_path() -> Union[None, str]:
+    """Returns the CSV path.
+
+    Returns:
+        Union[None, str]: CSV path.
+    """
+
+    global CSV_OUTPUT_PATH
+    return CSV_OUTPUT_PATH

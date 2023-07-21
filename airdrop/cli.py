@@ -8,7 +8,7 @@ from typing        import Optional, Union
 from typer         import Option, Exit
 from time          import time
 
-from airdrop.preflight import preflight_validate_yielding_address, preflight_validate_issuing_address, preflight_validate_supply_balance, preflight_fetch_metadata, preflight_validate_output, preflight_print_banner
+from airdrop.preflight import preflight_validate_yielding_address, preflight_validate_issuing_address, preflight_validate_supply_balance, preflight_fetch_metadata, preflight_validate_output, preflight_print_banner, preflight_confirm
 from airdrop.xrpl      import fetch_account_balances, fetch_trustlines, get_client
 from airdrop.calc      import calculate_total_yield, pick_balances_as_dict, increment_yield
 from airdrop           import __app_version__, __app_name__, console
@@ -64,6 +64,7 @@ def main(
     preflight_validate_yielding_address(yielding_address)
     preflight_validate_supply_balance(budget)
     preflight_validate_output(csv)
+    preflight_confirm()
 
 
 def do_command_routine(address: str, csv: Union[None, str], token_id: str):

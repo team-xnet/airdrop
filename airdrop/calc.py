@@ -8,6 +8,16 @@ AIRDROP_AMOUNT: Union[None, float, int] = None
 
 AIRDROP_YIELD_PER_TOKEN: Union[None, tuple[str, float]] = None
 
+def get_budget() -> Union[None, float, int]:
+    """Returns the current airdrop budget state.
+
+    Returns:
+        Union[None, float, int]: The airdrop budget.
+    """
+
+    global AIRDROP_AMOUNT
+    return AIRDROP_AMOUNT
+
 def pick_balances_as_dict(balances: list[tuple[str, float]], pick: Union[str, list[str]]) -> dict[str, float]:
     """Filters a list of XRPL balances, returning only balances that have a matching token `id` in `pick` list.
 

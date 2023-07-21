@@ -7,13 +7,14 @@ from rich.align   import Align
 from rich.panel   import Panel
 from rich.text    import Text
 from requests     import get
+from decimal      import Decimal
 from typing       import Union
 from typer        import Exit
 from os           import path
 
-from airdrop.calc import update_budget
-from airdrop.xrpl import update_issuing_metadata, update_yielding_token
-from airdrop.csv  import set_output_path, is_path_valid
+from airdrop.calc import update_budget, get_budget
+from airdrop.xrpl import update_issuing_metadata, update_yielding_token, get_yielding, get_issuer
+from airdrop.csv  import set_output_path, is_path_valid, get_csv_path
 from airdrop      import console, i18n, t
 
 REQUIRED_PARAMS_MISSING = 0
@@ -199,7 +200,7 @@ def preflight_validate_yielding_address(address) -> None:
 
     if isinstance(address, type(None)):
         address = Prompt.ask(t(i18n.preflight.enter_yielding, step=REQUIRED_PARAMS_VISITED, maximum=REQUIRED_PARAMS_MISSING))
-        token_id = None
+        token = None
 
         if address not in XRPL_METADATA:
 
@@ -207,7 +208,7 @@ def preflight_validate_yielding_address(address) -> None:
                 console.print(t(i18n.preflight.error_issuer_invalid, address=address))
                 raise Exit()
 
-            token_id = "XRP"
+            token = ("XRP", None)
 
         else:
             issued_tokens = XRPL_METADATA[address]
@@ -227,7 +228,7 @@ def preflight_validate_yielding_address(address) -> None:
                     idx    += 1
 
                     choice_idx.append(f'{ idx }')
-                    choices.append(id)
+                    choices.append((id, name))
 
                     if idx == len(XRPL_METADATA[address]):
                         newline = ""
@@ -239,12 +240,12 @@ def preflight_validate_yielding_address(address) -> None:
                     choice_list += f"{ idx }: { id }{ newline }"
 
                 chosen_idx = IntPrompt.ask(t(i18n.preflight.choose_token, address=str(address), tokens=choice_list, total=issued_tokens_len), choices=choice_idx)
-                token_id = choices[chosen_idx - 1]
+                token      = choices[chosen_idx - 1]
 
             else:
-                token_id = XRPL_METADATA[address][0]
+                token = XRPL_METADATA[address]
 
-    if not update_yielding_token(token_id):
+    if not update_yielding_token(token[0], token[1]):
         console.print(t(i18n.preflight.error_yielding_overwrite, address=address))
         raise Exit()
 
@@ -344,3 +345,44 @@ def preflight_validate_output(output_path) -> None:
             return
 
         set_output_path(f'{ output_path }/airdrop.csv')
+
+
+def preflight_confirm():
+    """Prints all the chosen options into terminal, allowing the user to double check their inputs being right.
+
+    Raises:
+        Exit: If the user exits.
+    """
+
+    yielding = get_yielding()
+    csv      = get_csv_path()
+    issuing  = get_issuer()
+    budget   = get_budget()
+
+    final_yielding = None
+    final_issuing  = None
+    final_budget   = None
+
+    if not isinstance(issuing, type(None)):
+        token = issuing[1]
+
+        if type(token[1]) is str:
+            final_issuing = f'{ token[0] } ({ token[1] })'
+
+        else:
+            final_issuing = token[0]
+
+    if not isinstance(yielding, type(None)):
+
+        if type(yielding[1]) is str:
+            final_yielding = f'{ yielding[0] } ({ yielding[1] })'
+
+        else:
+            final_yielding = yielding[0]
+
+    final_budget = f'{ Decimal(budget).normalize() }'
+
+    confirm = Confirm.ask(t(i18n.preflight.confirm_preflight, issuing=final_issuing, yielding=final_yielding, budget=final_budget, csv=csv), default=True)
+
+    if confirm is not True:
+        raise Exit()
