@@ -2,15 +2,18 @@
 """Author: spunk-developer <xspunk.developer@gmail.com>"""
 
 from rich.console import Group
-from rich.prompt  import IntPrompt, Prompt
+from rich.prompt  import IntPrompt, Confirm, Prompt
 from rich.align   import Align
 from rich.panel   import Panel
 from rich.text    import Text
 from requests     import get
+from typing       import Union
 from typer        import Exit
+from os           import path
 
 from airdrop.calc import update_budget
 from airdrop.xrpl import update_issuing_metadata, update_yielding_token
+from airdrop.csv  import set_output_path, is_path_valid
 from airdrop      import console, i18n, t
 
 REQUIRED_PARAMS_MISSING = 0
@@ -18,6 +21,8 @@ REQUIRED_PARAMS_MISSING = 0
 REQUIRED_PARAMS_VISITED = 0
 
 XRPL_METADATA: dict[str, list[tuple[str, str]]] = { }
+
+CSV_PATH:      Union[None, str] = None
 
 
 def preflight_print_banner() -> None:
@@ -106,8 +111,8 @@ def preflight_fetch_metadata(issuing_address, yielding_address, budget, csv) -> 
 
                     XRPL_METADATA[issuer].append((id, name))
 
-                if response["count"] <= iterations:
-                    break
+                #if response["count"] <= iterations:
+                break
 
                 response = get("https://s1.xrplmeta.org/tokens", params={ "limit": iter_step, "trust_level": [ 1, 2, 3 ], "offset": iterations }).json()
                 iterations += iter_step
@@ -199,7 +204,7 @@ def preflight_validate_yielding_address(address) -> None:
         if address not in XRPL_METADATA:
 
             if address.lower() != "xrp":
-                console.print(t(i18n.preflight.error_issuer_invalid, address=str(address)))
+                console.print(t(i18n.preflight.error_issuer_invalid, address=address))
                 raise Exit()
 
             token_id = "XRP"
@@ -208,8 +213,6 @@ def preflight_validate_yielding_address(address) -> None:
             issued_tokens = XRPL_METADATA[address]
 
             issued_tokens_len = len(issued_tokens)
-
-            console.print(issued_tokens_len)
 
             if issued_tokens_len >= 2:
 
@@ -282,3 +285,62 @@ def preflight_validate_supply_balance(input) -> None:
     if not update_budget(validated_input):
         console.print(i18n.preflight.error_overwrite)
         raise Exit()
+
+
+def preflight_validate_output(output_path) -> None:
+    """Validates the CSV output if it exists,
+
+    Args:
+        output_path (Union[str, None]): The path where to save the CSV file. May end with the CSV filename.
+
+    Raises:
+        Exit: If the path is invalid, or inaccessible for whatever reason.
+    """
+
+    global REQUIRED_PARAMS_MISSING, REQUIRED_PARAMS_VISITED
+
+    REQUIRED_PARAMS_VISITED += 1
+
+    if isinstance(output_path, type(None)):
+
+        if Confirm.ask(t(i18n.preflight.confirm_csv, step=REQUIRED_PARAMS_VISITED, maximum=REQUIRED_PARAMS_MISSING), default=True) is False:
+            return
+
+        choice = int(IntPrompt.ask(i18n.preflight.choose_path, choices=[ "1", "2", "3" ]))
+
+        if choice == 1:
+            output_path = path.expanduser("~/Desktop")
+
+        elif choice == 2:
+            output_path = path.expanduser("~/Documents")
+
+        elif choice == 3:
+            user_path = Prompt.ask(i18n.preflight.custom_path, default="", show_default=False)
+
+            if type(user_path) is str and len(user_path) >= 1:
+                output_path = user_path
+
+    try:
+        if output_path.startswith("~"):
+            output_path = path.expanduser(output_path)
+
+        output_path = path.normpath(path.abspath(output_path))
+
+        # We kill the whole thing if the path can't be validated.
+        if not is_path_valid(output_path):
+            raise RuntimeError()
+
+    except:
+        console.print(t(i18n.preflight.error_empty_path, path=output_path))
+        raise Exit()
+
+    if output_path.endswith(path.sep):
+        set_output_path(f'{ output_path }airdrop.csv')
+        return
+
+    else:
+        if output_path.endswith(".csv"):
+            set_output_path(output_path)
+            return
+
+        set_output_path(f'{ output_path }/airdrop.csv')

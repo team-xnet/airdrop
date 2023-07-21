@@ -50,12 +50,19 @@ class I18NPreflight():
     error_minimum    = Template('[[error]FAIL[/error]] Input "${value}" must be larger than 0')
     error_maximum    = Template('[[error]FAIL[/error]] Input "${value}" cannot be larger than maximum allowed integer 100000000000000000')
 
+    # Output CSV file
+    confirm_csv = Template('[prominent](${step}/${maximum})[/prominent] Once the airdrop has finished calculating, would you like to save the results into a CSV file? If not, the result of the calculations is printed into console as a table')
+    choose_path = "Where would you like to save the CSV file?\n\n1. Desktop\n2. Documents\n3. Custom...\n\nEnter choice"
+    custom_path = "Enter custom save path for the output CSV file"
+    error_empty_path = Template('Path "${path}" is not valid. Please make sure it follows the path specification of your operating system, and that it is not empty!')
+
 @dataclass(frozen=True)
 class I18NBase():
     preflight = I18NPreflight()
 
-console = Console(color_system="auto", theme=CONSOLE_THEME)
-i18n    = I18NBase()
-
 def t(str: Template, **kwargs) -> str:
     return str.substitute(kwargs)
+
+
+console = Console(color_system="auto", theme=CONSOLE_THEME)
+i18n    = I18NBase()
