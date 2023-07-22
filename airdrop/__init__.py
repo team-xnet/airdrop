@@ -57,11 +57,36 @@ class I18NPreflight():
     error_empty_path = Template('Path "${path}" is not valid. Please make sure it follows the path specification of your operating system, and that it is not empty!')
 
     # Confirm options
-    confirm_preflight = Template('\n - Issued token: ${issuing}\n - Yield token: ${yielding}\n - Total budget: ${budget}\n - Output CSV path: ${csv}"\n\nIs this OK?')
+    confirm_preflight = Template('\n - Issued token: ${issuing}\n - Yield token: ${yielding}\n - Total budget: ${budget}\n - Output CSV path: ${csv}\n\nIs this OK?')
+
+@dataclass(frozen=True)
+class I18NSteps():
+
+    # Yield calculation
+    yield_sum            = "[[info]WORKING[/info]] Summing up the total balance for all trustlines..."
+    yield_result         = "[[info]WORKING[/info]] Calculating total yield for all trustlines..."
+    yield_result_account = Template('[[info]WORKING[/info]] Calculating total yield for [prominent]${address}[/prominent]...')
+
+    # Trustline fetch
+    trustlines_fetch         = Template('[[info]WORKING[/info]] Fetching trustlines for address [prominent]${address}[/prominent]...')
+    trustlines_fetch_success = Template('[[success]SUCCESS[/success]] Successfully fetched [prominent]${count}[/prominent] trustlines set for issuing address [prominent]${address}[/prominent] in [prominent]${delta}[/prominent]')
+    error_trustline_fetch    = Template('[[error]FAIL[/error]] Failed fetching trustlines for address [prominent]${address}[/prominent]! Please make sure you have an active internet connection, and that the issuing token in question has one or more trustlines set against it')
+
+    # Balances fetch
+    balances_fetch         = "[[info]WORKING[/info]] Fetching trustline balances..."
+    balances_fetch_account = Template('[[info]WORKING[/info]] Fetching [prominent]${token}[/prominent] for trustline address [prominent]${address}[/prominent]...')
+    balances_fetch_success = Template('[[success]SUCCESS[/success]] Successfully fetched balances for [prominent]${count}[/prominent] trustlines in [prominent]${delta}[/prominent]')
+    error_balances         = "[[error]FAIL[/error]] Could not fetch remaining account balances. This could be due to XRPL rate limiting, or due to connection issues"
+
+    # Print yield
+    error_saving_csv = Template('[[error]FAIL[/error]] Could not save output CSV file to path "${}". Please make sure you have correct permissions to write to this location and try again')
+    print_subtitle   = "Finished airdrop calculations!"
+    print_header     = "Total airdrop yield"
 
 @dataclass(frozen=True)
 class I18NBase():
     preflight = I18NPreflight()
+    steps     = I18NSteps()
 
 def t(str: Template, **kwargs) -> str:
     return str.substitute(kwargs)

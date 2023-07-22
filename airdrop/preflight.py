@@ -14,7 +14,7 @@ from os           import path
 
 from airdrop.calc import update_budget, get_budget
 from airdrop.xrpl import update_issuing_metadata, update_yielding_token, get_yielding, get_issuer
-from airdrop.csv  import set_output_path, is_path_valid, get_csv_path
+from airdrop.csv  import set_output_path, is_path_valid, get_csv
 from airdrop      import console, i18n, t
 
 REQUIRED_PARAMS_MISSING = 0
@@ -112,8 +112,8 @@ def preflight_fetch_metadata(issuing_address, yielding_address, budget, csv) -> 
 
                     XRPL_METADATA[issuer].append((id, name))
 
-                #if response["count"] <= iterations:
-                break
+                if response["count"] <= iterations:
+                    break
 
                 response = get("https://s1.xrplmeta.org/tokens", params={ "limit": iter_step, "trust_level": [ 1, 2, 3 ], "offset": iterations }).json()
                 iterations += iter_step
@@ -355,9 +355,9 @@ def preflight_confirm():
     """
 
     yielding = get_yielding()
-    csv      = get_csv_path()
     issuing  = get_issuer()
     budget   = get_budget()
+    csv      = get_csv()
 
     final_yielding = None
     final_issuing  = None

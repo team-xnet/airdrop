@@ -42,6 +42,7 @@ def pick_balances_as_dict(balances: list[tuple[str, float]], pick: Union[str, li
             continue
     return picked_balances
 
+
 def update_budget(budget: Union[float, int]) -> bool:
     """Updates the total airdroppable budget.
 
@@ -57,6 +58,7 @@ def update_budget(budget: Union[float, int]) -> bool:
     AIRDROP_AMOUNT = budget
     return True
 
+
 def increment_yield(id: str, amount: float) -> None:
     """Increments internal total balance for a given currency.
 
@@ -69,6 +71,7 @@ def increment_yield(id: str, amount: float) -> None:
         TOTAL_BALANCES[id] += amount
         return
     TOTAL_BALANCES[id] = amount
+
 
 def calculate_total_yield(id: str) -> bool:
     """Calculates the total yield per token for the entire airdrop.

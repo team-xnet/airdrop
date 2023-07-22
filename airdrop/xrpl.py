@@ -23,7 +23,7 @@ def get_issuer() -> Union[None, tuple[str, str]]:
     return SELECTED_TRUSTLINE
 
 
-def get_yielding() -> Union[None, tuple[str, str]]:
+def get_yielding() -> Union[None, tuple[str, Union[None, str]]]:
     """Returns the current state for the yielding token.
 
     Returns:
@@ -32,6 +32,7 @@ def get_yielding() -> Union[None, tuple[str, str]]:
 
     global YIELDING_TOKEN
     return YIELDING_TOKEN
+
 
 def update_issuing_metadata(address: str, currency: str) -> bool:
     """Updates source issuing address if it hasn't been set already.
@@ -53,6 +54,7 @@ def update_issuing_metadata(address: str, currency: str) -> bool:
 
     return True
 
+
 def update_yielding_token(currency: str, name: Union[None, str]) -> bool:
     """Updates the currency identifier which we use to calculate the total yield per token for the entire airdrop.
 
@@ -72,6 +74,7 @@ def update_yielding_token(currency: str, name: Union[None, str]) -> bool:
 
     return True
 
+
 def get_client() -> WebsocketClient:
     """Returns an active XRPL WebSocket client, or creates a new one if no active client exists.
 
@@ -80,12 +83,13 @@ def get_client() -> WebsocketClient:
     """
     global XRPL_CLIENT
 
-    if not isinstance(XRPL_CLIENT, type(None)):
+    if isinstance(XRPL_CLIENT, type(None)):
         XRPL_CLIENT = WebsocketClient("wss://xrplcluster.com/")
 
     return XRPL_CLIENT
 
-def fetch_trustlines(address: str, client: WebsocketClient) -> list[(str, str)]:
+
+def fetch_trustlines(address: str, token_id: str, client: WebsocketClient) -> list[(str, str)]:
     """Fetches all registered trustlines for XNET token for a given XRPL account.
 
     Args:
@@ -98,28 +102,33 @@ def fetch_trustlines(address: str, client: WebsocketClient) -> list[(str, str)]:
     Returns:
         list[(str, str)]: List of all unique trustlines.
     """
+
     request  = AccountLines(account=address, ledger_index="validated")
     response = client.request(request)
+
     # We throw if the XRPL considers this request to be unsuccessful, or the data to be invalid.
     if not response.is_successful() or not response.is_valid():
         raise AssertionError
+
     results: list[str] = []
-    # We use a while loop due to having paginated responses.
+
     while True:
-        found_trustline = False
         for trustline in response.result["lines"]:
-            if trustline["currency"] != "584E455400000000000000000000000000000000" or trustline["account"] in results:
+            if trustline["currency"] != token_id or trustline["account"] in results:
                 continue
+
             results.append(trustline["account"])
-            found_trustline = True
+
+        if "marker" not in response.result:
             break
-        if "marker" not in response.result or found_trustline is True:
-            break
+
         request  = AccountLines(account=address, ledger_index=response.result["ledger_index"], marker=response.result["marker"])
         response = client.request(request)
+
     return results
 
-def fetch_account_balances(address: str, client: WebsocketClient) -> tuple[str, list[tuple[str, float]]]:
+
+def fetch_account_balance(address: str, token: str, client: WebsocketClient) -> float:
     """Fetches XRP balance & ALL trustline token balances for a given account.
 
     Args:
@@ -132,32 +141,46 @@ def fetch_account_balances(address: str, client: WebsocketClient) -> tuple[str, 
     Returns:
         tuple[str, list[tuple[str, float]]]: A tuple containing the original account address and a list of tuples containing all tokens and balances.
     """
-    balances = []
-    # Fetch base XRP balance.
-    request  = AccountInfo(account=address, ledger_index="validated")
-    response = client.request(request)
-    if not response.is_successful() or not response.is_valid():
-        raise AssertionError
-    balance = response.result["account_data"]["Balance"]
-    # We have to parse the balance manually if it hasn't been already.
-    # And since balance can be fractions of a token, it needs to be parsed as a float.
-    if not type(balance) is float:
-        balance = float(balance)
-    balances.append(("XRP", balance))
-    # Fetch all community token balances.
+
+    if token.lower() == "xrp":
+        request  = AccountInfo(account=address, ledger_index="validated")
+        response = client.request(request)
+
+        if not response.is_successful() or not response.is_valid():
+            raise AssertionError
+
+        balance = response.result["account_data"]["Balance"]
+
+        if not type(balance) is float:
+            balance = float(balance)
+
+        return balance
+
     request  = AccountLines(account=address, ledger_index="validated")
     response = client.request(request)
+
     if not response.is_successful() or not response.is_valid():
         raise AssertionError
+
     while True:
         for trustline in response.result["lines"]:
+
+            if trustline["currency"] != token:
+                continue
+
             balance = trustline["balance"]
-            # Convert balance into float so we can do arithmetic on it.
-            if not type(balance) is float:
-                balance = float(balance)
-            balances.append((trustline["currency"], balance))
+
+            try:
+                if not type(balance) is float:
+                    balance = float(balance)
+
+            except:
+                balance = float(0)
+
+            return balance
+
         if "marker" not in response.result:
             break
+
         request  = AccountLines(account=address, ledger_index=response.result["ledger_index"], marker=response.result["marker"])
         response = client.request(request)
-    return (address, balances)

@@ -75,30 +75,37 @@ def is_path_valid(pathname: str) -> bool:
         return True
 
 
-def generate_csv(data: list[dict], path: str) -> bool:
+def generate_csv(path: str, headers: list[str], data: list[dict]) -> bool:
     """Generates and writes given `data` dictionary into `path`.
 
     Args:
-        data (dict): CSV data itself. The dictionary structure must be as follows: Address: str, SOLO: int, XRP: int, Ratio: int, Split: str
         path (str): Output path for the CSV file. Must also include the
+        headers (str): The headers for the file. The `data` list dictionaries must use the header elements as their keys.
+        data (dict): CSV data itself.
+
+    Returns:
+        bool: `True` if the file was written successfully, `False` otherwise.
     """
 
-    csv_path = get_csv_path()
+    csv_path = get_csv()
 
     if isinstance(csv_path, type(None)):
         return
 
     try:
         with open(Path(path).resolve(), "w", encoding="UTF8", newline="") as file:
-            columns = ["Address", "SOLO", "XRP", "Ratio", "Split"]
-            writer = DictWriter(file, fieldnames=columns)
+
+            writer = DictWriter(file, fieldnames=headers)
+
             writer.writeheader()
             writer.writerows(data)
+
             return True
     except:
         return False
 
-def get_csv_path() -> Union[None, str]:
+
+def get_csv() -> Union[None, str]:
     """Returns the CSV path.
 
     Returns:
