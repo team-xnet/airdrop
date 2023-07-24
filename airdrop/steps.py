@@ -250,7 +250,7 @@ def step_end_airdrop_calculations():
 
     results.add_row(
         Text("Total elapsed time", "#57F6F0"),
-        Text(timedelta(seconds=int(time() - AIRDROP_START_TIME)), "#57F6F0")
+        Text(str(timedelta(seconds=int(time() - AIRDROP_START_TIME))), "#57F6F0")
     )
 
     console.print(Panel(results, padding=(1, 3), subtitle=i18n.steps.print_subtitle, subtitle_align="left", border_style="#1B6AFF"))
