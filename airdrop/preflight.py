@@ -12,7 +12,7 @@ from typing       import Union
 from typer        import Exit
 from os           import path
 
-from airdrop.calc import update_budget, get_budget
+from airdrop.calc import set_airdrop_budget, get_budget
 from airdrop.xrpl import update_issuing_metadata, update_yielding_token, get_yielding, get_issuer
 from airdrop.csv  import set_output_path, is_path_valid, get_csv
 from airdrop      import console, i18n, t
@@ -283,7 +283,7 @@ def preflight_validate_supply_balance(input) -> None:
         console.print(t(i18n.preflight.error_maximum, value=input))
         raise Exit()
 
-    if not update_budget(validated_input):
+    if not set_airdrop_budget(validated_input):
         console.print(i18n.preflight.error_overwrite)
         raise Exit()
 

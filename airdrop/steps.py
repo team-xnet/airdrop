@@ -12,21 +12,17 @@ from typer         import Exit
 from time          import time
 
 from airdrop.xrpl import fetch_account_balance, fetch_trustlines, get_yielding, get_client, get_issuer
-from airdrop.calc import get_budget
+from airdrop.calc import calculate_airdrop_ratio, calculate_yield, increment_airdrop_sum, get_ratio, get_sum
 from airdrop.csv  import generate_csv, get_csv
 from airdrop      import console, i18n, t
 
-FETCHED_TRUSTLINE_BALANCES: Union[None, dict[str, float]] = None
+AIRDROP_START_TIME:         Union[None, float] = None
 
-FETCHED_TARGET_TRUSTLINES:  Union[None, list[str]]        = None
+FETCHED_TRUSTLINE_BALANCES: dict[str, float]   = { }
 
-AIRDROP_START_TIME:         Union[None, float]            = None
+FETCHED_TARGET_TRUSTLINES:  list[str]          = [ ]
 
-RESULT_TRUSTLINES_YIELD:    Union[None, dict[str, float]] = None
-
-RESULT_TRUSTLINES_TOTAL:    Union[None, float]            = None
-
-RESULT_RATIO:               Union[None, float]            = None
+INDIVIDUAL_TRUSTILE_YIELD:  dict[str, float]   = { }
 
 def step_begin_airdrop_calculations():
     """Prints the beginning message and takes a time snapshot for future timings."""
@@ -77,9 +73,11 @@ def step_fetch_issuer_trustlines():
 
             except Exception:
                 status.stop()
+                # @NOTE(spunk-developer): Rate limiting?
                 console.print(t(i18n.steps.error_trustline_fetch, address=address))
                 raise Exit()
 
+    # @NOTE(spunk-developer): Add checkmark to the start of the message
     console.print(t(i18n.steps.trustlines_fetch_success, count=len(FETCHED_TARGET_TRUSTLINES), address=address, delta=timedelta(seconds=int(time() - start_time))))
 
 
@@ -91,8 +89,6 @@ def step_fetch_trustline_balances():
     """
 
     global FETCHED_TRUSTLINE_BALANCES, FETCHED_TARGET_TRUSTLINES
-
-    FETCHED_TRUSTLINE_BALANCES = { }
 
     yielding_metadata = get_yielding()
 
@@ -120,10 +116,12 @@ def step_fetch_trustline_balances():
                     FETCHED_TRUSTLINE_BALANCES[trustline] = fetch_account_balance(trustline, token, client)
 
                 status.stop()
+                # @NOTE(spunk-developer): Add checkmark to the start of this message
                 console.print(t(i18n.steps.balances_fetch_success, count=len(FETCHED_TRUSTLINE_BALANCES), delta=timedelta(seconds=int(time() - start_time))))
 
             except:
                 status.stop()
+                # @NOTE(spunk-developer): More rate limiting stuff
                 console.print(i18n.steps.error_balances)
                 raise Exit()
 
@@ -132,24 +130,18 @@ def step_calculate_airdrop_yield():
     """Generates all user-facing text into console while calculating all airdrop related balances.
     """
 
-    global FETCHED_TRUSTLINE_BALANCES, RESULT_TRUSTLINES_YIELD, RESULT_TRUSTLINES_TOTAL, RESULT_RATIO
-
-    budget = get_budget()
-
-    if isinstance(RESULT_TRUSTLINES_TOTAL, type(None)):
-        RESULT_TRUSTLINES_TOTAL = float(0)
-
-    if isinstance(RESULT_TRUSTLINES_YIELD, type(None)):
-        RESULT_TRUSTLINES_YIELD = { }
+    global FETCHED_TRUSTLINE_BALANCES, INDIVIDUAL_TRUSTILE_YIELD
 
     with console.status(i18n.steps.yield_sum, spinner="dots") as status:
 
         status.start()
 
-        for balance in FETCHED_TRUSTLINE_BALANCES.values():
-            RESULT_TRUSTLINES_TOTAL += balance
+        increment_airdrop_sum(FETCHED_TRUSTLINE_BALANCES.values())
+        if not calculate_airdrop_ratio():
+            # @TODO(spunk-developer): Do some fancy-ass error handling here.
+            status.stop()
 
-        RESULT_RATIO = budget / RESULT_TRUSTLINES_TOTAL
+            raise Exit()
 
         status.stop()
 
@@ -160,7 +152,15 @@ def step_calculate_airdrop_yield():
         for address, balance in FETCHED_TRUSTLINE_BALANCES.items():
             progress.update(task, description=t(i18n.steps.yield_result_account, address=address))
 
-            RESULT_TRUSTLINES_YIELD[address] = balance * RESULT_RATIO
+            resulting_yield = calculate_yield(balance)
+
+            if isinstance(resulting_yield, type(None)):
+                # @TODO(spunk-developer): More fancy error handling
+
+                progress.remove_task(task)
+                raise Exit()
+
+            INDIVIDUAL_TRUSTILE_YIELD[address] = resulting_yield
 
             progress.advance(task)
 
@@ -174,10 +174,12 @@ def step_end_airdrop_calculations():
         Exit: If CSV saving was chosen, being unable to save to chosen path.
     """
 
-    global FETCHED_TRUSTLINE_BALANCES, FETCHED_TARGET_TRUSTLINES, RESULT_TRUSTLINES_YIELD, RESULT_TRUSTLINES_TOTAL, AIRDROP_START_TIME, RESULT_RATIO
+    global FETCHED_TRUSTLINE_BALANCES, INDIVIDUAL_TRUSTILE_YIELD, FETCHED_TARGET_TRUSTLINES, AIRDROP_START_TIME
 
     yielding_metadata = get_yielding()
+    ratio             = get_ratio()
     path              = get_csv()
+    sum               = get_sum()
 
     token = yielding_metadata[0]
     name  = yielding_metadata[1]
@@ -192,47 +194,69 @@ def step_end_airdrop_calculations():
         table.add_column("Address", justify="left", style="#902EF4")
         table.add_column(name,      justify="left", style="#0098FF")
         table.add_column("Yield",   justify="left", style="#00CFFF")
-        table.add_column("Split",   justify="left", style="#57F6F0")
+
+        if sum >= 1:
+            table.add_column("Split",   justify="left", style="#57F6F0")
 
         for address in FETCHED_TARGET_TRUSTLINES:
 
-            if address not in FETCHED_TARGET_TRUSTLINES or address not in RESULT_TRUSTLINES_YIELD:
+            if address not in FETCHED_TARGET_TRUSTLINES or address not in INDIVIDUAL_TRUSTILE_YIELD:
                 continue
 
             balance = f'{ FETCHED_TRUSTLINE_BALANCES[address] }'
-            result  = f'{ RESULT_TRUSTLINES_YIELD[address] }'
-            split   = f'{ (RESULT_TRUSTLINES_YIELD[address] / RESULT_TRUSTLINES_TOTAL) * 100 }'
+            result  = f'{ INDIVIDUAL_TRUSTILE_YIELD[address] }'
 
-            table.add_row(address, balance, result, split)
+            if sum >= 1:
+                split   = f'{ (INDIVIDUAL_TRUSTILE_YIELD[address] / sum) * 100 }'
+                table.add_row(address, balance, result, split)
+
+            else:
+                table.add_row(address, balance, result)
 
         console.print(table)
 
     else:
 
-        headers = [ "Address", f'{ name }', "Yield", "Split" ]
+        headers = [ "Address", f'{ name }', "Yield" ]
         data    = [ ]
+
+        if sum >= 1:
+            headers = [ "Address", f'{ name }', "Yield", "Split" ]
 
         for address in FETCHED_TARGET_TRUSTLINES:
 
-            if address not in FETCHED_TARGET_TRUSTLINES or address not in RESULT_TRUSTLINES_YIELD:
+            if address not in FETCHED_TARGET_TRUSTLINES or address not in INDIVIDUAL_TRUSTILE_YIELD:
                 continue
 
             balance = FETCHED_TRUSTLINE_BALANCES[address]
-            result  = RESULT_TRUSTLINES_YIELD[address]
-            split   = (result / RESULT_TRUSTLINES_TOTAL) * 100
+            result  = INDIVIDUAL_TRUSTILE_YIELD[address]
 
-            data.append(
-                {
-                    "Address"  : address,
-                    f'{ name }': balance,
-                    "Yield"    : result,
-                    "Split"    : f'{ split }%'
-                }
-            )
+            if sum >= 1:
+                split   = ( result / sum ) * 100
+
+                data.append(
+                    {
+                        "Address"  : address,
+                        f'{ name }': balance,
+                        "Yield"    : result,
+                        "Split"    : f'{ split }%'
+                    }
+                )
+
+            else:
+                data.append(
+                    {
+                        "Address"  : address,
+                        f'{ name }': balance,
+                        "Yield"    : result
+                    }
+                )
 
         if not generate_csv(path, headers, data):
             console.print(t(i18n.steps.error_saving_csv, path=path))
             raise Exit()
+
+    # @NOTE(spunk-developer): Redo this WHOLE THING
 
     results = Table(box=None, show_header=False, show_edge=False, padding=(1, 1))
 
@@ -246,12 +270,12 @@ def step_end_airdrop_calculations():
 
     results.add_row(
         Text("Trustline sum", "#0098FF"),
-        Text(f'{ RESULT_TRUSTLINES_TOTAL }', "#0098FF")
+        Text(f'{ sum }', "#0098FF")
     )
 
     results.add_row(
         Text("Airdrop ratio", "#00CFFF"),
-        Text(f'{ RESULT_RATIO }', "#00CFFF")
+        Text(f'{ ratio }', "#00CFFF")
     )
 
     results.add_row(

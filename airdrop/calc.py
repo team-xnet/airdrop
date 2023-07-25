@@ -1,89 +1,114 @@
 """Calculation functions.                              """
 """Author: spunk-developer <xspunk.developer@gmail.com>"""
+
 from typing import Union
 
-TOTAL_BALANCES: dict[str, float] = { }
+AIRDROP_TOTAL_BUDGET: Union[None, float] = None
 
-AIRDROP_AMOUNT: Union[None, float, int] = None
+AIRDROP_RATIO:        Union[None, float] = None
 
-AIRDROP_YIELD_PER_TOKEN: Union[None, tuple[str, float]] = None
+AIRDROP_TOTAL_SUM:    float              = 0.0
 
-def get_budget() -> Union[None, float, int]:
+def get_budget() -> Union[None, float]:
     """Returns the current airdrop budget state.
 
     Returns:
-        Union[None, float, int]: The airdrop budget.
+        Union[None, float]: The airdrop budget.
     """
 
-    global AIRDROP_AMOUNT
-    return AIRDROP_AMOUNT
+    global AIRDROP_TOTAL_BUDGET
+    return AIRDROP_TOTAL_BUDGET
 
-def pick_balances_as_dict(balances: list[tuple[str, float]], pick: Union[str, list[str]]) -> dict[str, float]:
-    """Filters a list of XRPL balances, returning only balances that have a matching token `id` in `pick` list.
 
-    Args:
-        balances (list[tuple[str, float]]): Raw list of balances which to filter from.
-        pick (Union[str, list[str]]): List of IDs (or singular string ID) which to filter.
+def get_ratio() -> Union[None, str]:
+    """Returns the current airdrop ratio.
 
     Returns:
-        dict[str, float]: Dictionary including all picked balances with their IDs set as keys.
+        Union[None, str]: The ratio, which is the budget divided by ratio.
     """
-    picked_balances: dict[str, float] = { }
-    for id, balance in balances:
-        # We find the given id from balances whenever it's just a standalone ID.
-        if type(pick) is str:
-            if id is pick:
-                picked_balances[id] = balance
-                break
-            continue
-        elif type(pick) is list:
-            if id in pick:
-                picked_balances[id] = balance
-            continue
-    return picked_balances
 
 
-def update_budget(budget: Union[float, int]) -> bool:
-    """Updates the total airdroppable budget.
-
-    Args:
-        budget (Union[float, int]): The budget of the total airdrop.
+def get_sum() -> float:
+    """Returns the current airdrop total sum state.
 
     Returns:
-        bool: `True` if budget hasn't been set already, otherwise returns `False`.
+        float: The total sum of all trustline balances.
     """
-    global AIRDROP_AMOUNT
-    if not isinstance(AIRDROP_AMOUNT, type(None)):
+
+    global AIRDROP_TOTAL_SUM
+    return AIRDROP_TOTAL_SUM
+
+
+def set_airdrop_budget(amount: Union[float, int]) -> bool:
+    """Sets the total airdrop budget to given `amount`.
+
+    Args:
+        amount (float): The amount that the budget should be. Preferably represented as a float.
+
+    Returns:
+        bool: _description_
+    """
+
+    global AIRDROP_TOTAL_BUDGET
+
+    if isinstance(amount, type(int)):
+        amount = float(amount)
+
+    if isinstance(AIRDROP_TOTAL_BUDGET, type(None)):
+        AIRDROP_TOTAL_BUDGET = amount
+
+        return True
+
+    return False
+
+
+def increment_airdrop_sum(amount: Union[float, list[float]]) -> None:
+    """Increments the total airdrop sum, which is the total sum of all airdrop balances.
+
+    Args:
+        amount (Union[float, list[float]]): The amount which to increment with.
+    """
+
+    global AIRDROP_TOTAL_SUM
+
+    try:
+        for balance in amount:
+            AIRDROP_TOTAL_SUM += balance
+
+    except TypeError:
+        AIRDROP_TOTAL_SUM += amount
+
+
+def calculate_airdrop_ratio() -> bool:
+    """Calculates the total airdrop ratio if the prequisites are set.
+
+    Returns:
+        bool: Returns `True` if all prequisites are present, returns `False` otherwise.
+    """
+
+    global AIRDROP_TOTAL_BUDGET, AIRDROP_TOTAL_SUM, AIRDROP_RATIO
+
+    if isinstance(AIRDROP_TOTAL_BUDGET, type(None)) or AIRDROP_TOTAL_SUM == 0.0:
         return False
-    AIRDROP_AMOUNT = budget
+
+    AIRDROP_RATIO = AIRDROP_TOTAL_BUDGET / AIRDROP_TOTAL_SUM
+
     return True
 
 
-def increment_yield(id: str, amount: float) -> None:
-    """Increments internal total balance for a given currency.
+def calculate_yield(balance: float) -> Union[float, None]:
+    """Calculates the yield for any given anonymous balance.
 
     Args:
-        id (str): Currency identifier.
-        amount (float): The amount to increment by.
-    """
-    global TOTAL_BALANCES
-    if id in TOTAL_BALANCES:
-        TOTAL_BALANCES[id] += amount
-        return
-    TOTAL_BALANCES[id] = amount
-
-
-def calculate_total_yield(id: str) -> bool:
-    """Calculates the total yield per token for the entire airdrop.
-
-    Args:
-        id (str): The identifier of the yielding token.
+        balance (float): The balance which to multiply.
 
     Returns:
-        bool: If the prequisites haven't been set, the function returns `False`. Otherwise `True`.
+        Union[float, None]: `None` if the ratio hasn't been set, otherwise correct yield.
     """
-    global AIRDROP_YIELD_PER_TOKEN, AIRDROP_AMOUNT, TOTAL_BALANCES
-    if type(AIRDROP_YIELD_PER_TOKEN) is tuple or type(AIRDROP_AMOUNT) is None or id not in TOTAL_BALANCES:
-        return False
-    AIRDROP_YIELD_PER_TOKEN = (id, AIRDROP_AMOUNT / TOTAL_BALANCES[id])
-    return True
+
+    global AIRDROP_RATIO
+
+    if isinstance(AIRDROP_RATIO, type(None)):
+        return None
+
+    return balance * AIRDROP_RATIO
