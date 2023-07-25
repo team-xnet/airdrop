@@ -1,5 +1,5 @@
 """The actual procdere steps needed to finish the whole airdrop."""
-"""Author: spunk-developer <xspunk.developer@gmail.com>"""
+"""Author: spunk-developer <xspunk.developer@gmail.com>         """
 
 from rich.progress import Progress
 from rich.padding  import Padding
@@ -196,6 +196,9 @@ def step_end_airdrop_calculations():
 
         for address in FETCHED_TARGET_TRUSTLINES:
 
+            if address not in FETCHED_TARGET_TRUSTLINES or address not in RESULT_TRUSTLINES_YIELD:
+                continue
+
             balance = f'{ FETCHED_TRUSTLINE_BALANCES[address] }'
             result  = f'{ RESULT_TRUSTLINES_YIELD[address] }'
             split   = f'{ (RESULT_TRUSTLINES_YIELD[address] / RESULT_TRUSTLINES_TOTAL) * 100 }'
@@ -210,6 +213,9 @@ def step_end_airdrop_calculations():
         data    = [ ]
 
         for address in FETCHED_TARGET_TRUSTLINES:
+
+            if address not in FETCHED_TARGET_TRUSTLINES or address not in RESULT_TRUSTLINES_YIELD:
+                continue
 
             balance = FETCHED_TRUSTLINE_BALANCES[address]
             result  = RESULT_TRUSTLINES_YIELD[address]

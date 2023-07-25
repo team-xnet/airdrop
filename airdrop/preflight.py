@@ -1,5 +1,5 @@
 """Operations, otherwise known as steps that the airdrop program has to take to complete it's task."""
-"""Author: spunk-developer <xspunk.developer@gmail.com>"""
+"""Author: spunk-developer <xspunk.developer@gmail.com>                                            """
 
 from rich.console import Group
 from rich.prompt  import IntPrompt, Confirm, Prompt

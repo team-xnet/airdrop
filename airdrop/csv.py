@@ -1,4 +1,4 @@
-"""CSV generation related methods."""
+"""CSV generation related methods.                     """
 """Author: spunk-developer <xspunk.developer@gmail.com>"""
 
 from pathlib import Path

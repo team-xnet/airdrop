@@ -1,4 +1,4 @@
-"""Calculation functions."""
+"""Calculation functions.                              """
 """Author: spunk-developer <xspunk.developer@gmail.com>"""
 from typing import Union
 

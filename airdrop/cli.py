@@ -1,4 +1,4 @@
-"""CLI functionality for our Airdrop utility."""
+"""CLI functionality for our Airdrop utility.          """
 """Author: spunk-developer <xspunk.developer@gmail.com>"""
 
 from pathlib       import Path

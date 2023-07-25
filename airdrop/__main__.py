@@ -1,4 +1,4 @@
-"""Airdrop invocation entrypoint."""
+"""Airdrop invocation entrypoint.                      """
 """Author: spunk-developer <xspunk.developer@gmail.com>"""
 
 from typer import run

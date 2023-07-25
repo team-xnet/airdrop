@@ -1,4 +1,4 @@
-"""XNET & XSPUNKS airdrop utility."""
+"""XNET & XSPUNKS airdrop utility.                     """
 """Author: spunk-developer <xspunk.developer@gmail.com>"""
 
 from string import Template
@@ -7,7 +7,7 @@ from rich.console import Console
 from dataclasses  import dataclass
 from rich.theme   import Theme
 
-__app_version__ = "0.1.0+alpha.1"
+__app_version__ = "1.0.0+beta"
 __app_name__    = "airdrop"
 
 CONSOLE_THEME = Theme(
