@@ -7,6 +7,7 @@ from typer         import Option, Exit
 
 from airdrop.preflight import preflight_validate_yielding_address, preflight_validate_issuing_address, preflight_validate_supply_balance, preflight_fetch_metadata, preflight_validate_output, preflight_print_banner, preflight_confirm
 from airdrop.steps     import step_begin_airdrop_calculations, step_fetch_trustline_balances, step_calculate_airdrop_yield, step_end_airdrop_calculations, step_fetch_issuer_trustlines
+from airdrop.cache     import rehydrate_terms_of_use
 from airdrop           import __app_version__, __app_name__, console
 
 
@@ -54,6 +55,9 @@ def main(
         is_eager=True
     )
 ) -> None:
+
+    # Pre-preflight stuff
+    rehydrate_terms_of_use()
 
     # Preflight stuff
     preflight_print_banner()

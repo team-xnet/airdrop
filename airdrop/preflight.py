@@ -1,29 +1,55 @@
 """Operations, otherwise known as steps that the airdrop program has to take to complete it's task."""
 """Author: spunk-developer <xspunk.developer@gmail.com>                                            """
 
-from rich.console import Group
-from rich.prompt  import IntPrompt, Confirm, Prompt
-from rich.align   import Align
-from rich.panel   import Panel
-from rich.text    import Text
-from requests     import get
-from decimal      import Decimal
-from typing       import Union
-from typer        import Exit
-from os           import path
+from rich.prompt import IntPrompt, Confirm, Prompt
+from rich.layout import Layout
+from rich.align  import Align
+from rich.panel  import Panel
+from rich.text   import Text
+from requests    import get
+from decimal     import Decimal
+from typing      import Union
+from typer       import Exit
+from os          import path
 
-from airdrop.calc import set_airdrop_budget, get_budget
-from airdrop.xrpl import update_issuing_metadata, update_yielding_token, get_yielding, get_issuer
-from airdrop.csv  import set_output_path, is_path_valid, get_csv
-from airdrop      import console, i18n, t
+from airdrop.cache import accept_terms_of_use, get_terms_of_use
+from airdrop.calc  import set_airdrop_budget, get_budget
+from airdrop.xrpl  import update_issuing_metadata, update_yielding_token, get_yielding, get_issuer
+from airdrop.csv   import set_output_path, is_path_valid, get_csv
+from airdrop       import console, i18n, t
 
-REQUIRED_PARAMS_MISSING = 0
-
-REQUIRED_PARAMS_VISITED = 0
+CSV_PATH:      Union[None, str]                 = None
 
 XRPL_METADATA: dict[str, list[tuple[str, str]]] = { }
 
-CSV_PATH:      Union[None, str] = None
+REQUIRED_PARAMS_MISSING                         = 0
+
+REQUIRED_PARAMS_VISITED                         = 0
+
+def get_layout_with_renderable(renderable) -> Layout:
+
+    rendered_banner = Text.assemble(
+        ("__   ___   _ ______ _______            _         _                 \n", "#902EF4"),
+        ("\ \ / / \ | |  ____|__   __|     /\   (_)       | |                \n", "#1B6AFF"),
+        (" \ V /|  \| | |__     | |       /  \   _ _ __ __| |_ __ ___  _ __  \n", "#008EFF"),
+        ("  > < | . ` |  __|    | |      / /\ \ | | '__/ _` | '__/ _ \| '_ \ \n", "#00AAFF"),
+        (" / . \| |\  | |____   | |     / ____ \| | | | (_| | | | (_) | |_) |\n", "#00ACFF"),
+        ("/_/ \_\_| \_|______|  |_|    /_/    \_\_|_|  \__,_|_|  \___/| .__/ \n", "#00D5FF"),
+        ("                                                            | |    \n", "#00E7FD"),
+        ("                                                            |_|    \n", "#57F6F0"),
+
+        overflow="crop",
+        no_wrap=True
+    )
+
+    layout = Layout()
+
+    layout.split_column(
+        Layout(Align(Panel(rendered_banner, expand=False, subtitle=i18n.preflight.banner_subtitle, subtitle_align="left", border_style="#1B6AFF", padding=(0, 5)), "center", vertical="middle"), name="top"),
+        Layout(Align(renderable, vertical="bottom"), name="bottom")
+    )
+
+    return layout
 
 
 def preflight_print_banner() -> None:
@@ -34,22 +60,24 @@ def preflight_print_banner() -> None:
     """
 
     try:
-        rendered_banner = Text.assemble(
-            ("__   ___   _ ______ _______            _         _                 \n", "#902EF4"),
-            ("\ \ / / \ | |  ____|__   __|     /\   (_)       | |                \n", "#1B6AFF"),
-            (" \ V /|  \| | |__     | |       /  \   _ _ __ __| |_ __ ___  _ __  \n", "#008EFF"),
-            ("  > < | . ` |  __|    | |      / /\ \ | | '__/ _` | '__/ _ \| '_ \ \n", "#00AAFF"),
-            (" / . \| |\  | |____   | |     / ____ \| | | | (_| | | | (_) | |_) |\n", "#00ACFF"),
-            ("/_/ \_\_| \_|______|  |_|    /_/    \_\_|_|  \__,_|_|  \___/| .__/ \n", "#00D5FF"),
-            ("                                                            | |    \n", "#00E7FD"),
-            ("                                                            |_|    \n", "#57F6F0"),
 
-            overflow="crop",
-            no_wrap=True
-        )
+        if not get_terms_of_use():
+            console.print(get_layout_with_renderable(Text.assemble(i18n.preflight.banner_description, i18n.preflight.banner_note, i18n.preflight.banner_disclaimer)))
 
-        # My god, this render statement gives me PTSD.
-        console.print(Panel(Group(Align(rendered_banner, "center"), Align(Text.assemble(i18n.preflight.banner_description, i18n.preflight.banner_note, i18n.preflight.banner_disclaimer), "left")), subtitle=i18n.preflight.banner_subtitle, subtitle_align="left", border_style="#1B6AFF"), "\n")
+            user_input = console.input("Type (Y)es if you agree to these terms, or (N)o if you wish to exit the program: ")
+
+            while True:
+
+                if user_input == "N" or user_input.lower() == "no":
+                    raise Exit()
+
+                if user_input == "Y" or user_input.lower() == "yes":
+                    accept_terms_of_use()
+                    break
+
+                user_input = console.input("Please enter either (Y)es or (N)o: ")
+
+            console.clear()
 
     # If an error happened for *any* reason, we can safely assume the console environment is completely fucked and unusable.
     except:
