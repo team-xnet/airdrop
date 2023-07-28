@@ -23,6 +23,10 @@ CONSOLE_THEME = Theme(
 @dataclass(frozen=True)
 class I18NPreflight():
 
+    # Terms of Use
+    terms_message = "Type (Y)es if you agree to these terms, or (N)o if you wish to exit the program: "
+    terms_error   = "Please enter either (Y)es or (N)o: "
+
     # Rendered banner title
     banner_subtitle    = "Made using XRP, Python, and a LOT of coffee by XNET."
     banner_description = "Thank you for using XNET Airdrop! Airdrop is a small utility program built to make the most tedious aspect of initial token distribution (Commonly known as airdropping) easier — The calculation aspect of it. Airdrop will automatically fetch all trustlines set against the desired currency so it can then calculate the total yield per trustline token, which is then finally filtered and organized into a table for you to use as the total distribution table for the distribution itself.\n\n"
@@ -84,8 +88,15 @@ class I18NSteps():
     print_header     = "Total airdrop yield"
 
 @dataclass(frozen=True)
+class I18NRehydrate:
+
+    metadata_cache = "We detected cached XRPL Meta metadata on disk. Would you like to use the previously cached data? (Y/n): "
+    metadata_error = "Please enter either (Y)es or (N)o: "
+
+@dataclass(frozen=True)
 class I18NBase():
     preflight = I18NPreflight()
+    rehydrate = I18NRehydrate()
     steps     = I18NSteps()
 
 def t(str: Template, **kwargs) -> str:

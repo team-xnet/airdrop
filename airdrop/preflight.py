@@ -6,7 +6,6 @@ from rich.layout import Layout
 from rich.align  import Align
 from rich.panel  import Panel
 from rich.text   import Text
-from requests    import get
 from decimal     import Decimal
 from typing      import Union
 from typer       import Exit
@@ -14,7 +13,7 @@ from os          import path
 
 from airdrop.cache import accept_terms_of_use, get_terms_of_use
 from airdrop.calc  import set_airdrop_budget, get_budget
-from airdrop.xrpl  import update_issuing_metadata, update_yielding_token, get_yielding, get_issuer
+from airdrop.xrpl  import update_issuing_metadata, fetch_xrpl_metadata, update_yielding_token, get_yielding, get_issuer
 from airdrop.csv   import set_output_path, is_path_valid, get_csv
 from airdrop       import console, i18n, t
 
@@ -64,7 +63,7 @@ def preflight_print_banner() -> None:
         if not get_terms_of_use():
             console.print(get_layout_with_renderable(Text.assemble(i18n.preflight.banner_description, i18n.preflight.banner_note, i18n.preflight.banner_disclaimer)))
 
-            user_input = console.input("Type (Y)es if you agree to these terms, or (N)o if you wish to exit the program: ")
+            user_input = console.input(i18n.preflight.terms_message)
 
             while True:
 
@@ -75,7 +74,7 @@ def preflight_print_banner() -> None:
                     accept_terms_of_use()
                     break
 
-                user_input = console.input("Please enter either (Y)es or (N)o: ")
+                user_input = console.input(i18n.preflight.terms_error)
 
             console.clear()
 
@@ -97,7 +96,7 @@ def preflight_fetch_metadata(issuing_address, yielding_address, budget, csv) -> 
         Exit: Whenever requests to XRPLMeta fail due to connection issues.
     """
 
-    global REQUIRED_PARAMS_MISSING
+    global REQUIRED_PARAMS_MISSING, XRPL_METADATA
 
     if isinstance(issuing_address, type(None)):
         REQUIRED_PARAMS_MISSING += 1
@@ -114,37 +113,12 @@ def preflight_fetch_metadata(issuing_address, yielding_address, budget, csv) -> 
     try:
         with console.status(i18n.preflight.metadata_fetch, spinner="dots") as status:
 
-            global XRPL_METADATA
             status.start()
 
-            iter_step  = 100
-            iterations = 0
-
-            response = get("https://s1.xrplmeta.org/tokens", params={ "limit": iter_step, "trust_level": [ 1, 2, 3 ] }).json()
-
-            while True:
-
-                for token in response["tokens"]:
-
-                    metadata = token["meta"]["token"]
-                    issuer   = token["issuer"]
-
-                    if token["issuer"] not in XRPL_METADATA:
-                        XRPL_METADATA[issuer] = [ ]
-
-                    id   = token["currency"]
-                    name = None
-
-                    if "name" in metadata:
-                        name = metadata["name"]
-
-                    XRPL_METADATA[issuer].append((id, name))
-
-                if response["count"] <= iterations:
-                    break
-
-                response = get("https://s1.xrplmeta.org/tokens", params={ "limit": iter_step, "trust_level": [ 1, 2, 3 ], "offset": iterations }).json()
-                iterations += iter_step
+            try:
+                XRPL_METADATA = fetch_xrpl_metadata()
+            except Exception as e:
+                console.print(e)
 
             status.stop()
 

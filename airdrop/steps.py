@@ -111,6 +111,9 @@ def step_fetch_trustline_balances():
                     if trustline in FETCHED_TRUSTLINE_BALANCES:
                         continue
 
+                    if FETCHED_TARGET_TRUSTLINES.index(trustline) >= 25:
+                        break
+
                     status.update(t(i18n.steps.balances_fetch_account, address=trustline, token=name))
 
                     FETCHED_TRUSTLINE_BALANCES[trustline] = fetch_account_balance(trustline, token, client)

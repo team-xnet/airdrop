@@ -3,8 +3,12 @@
 
 from xrpl.models.requests.account_lines import AccountLines
 from xrpl.models.requests.account_info  import AccountInfo
+from cache_to_disk                      import cache_to_disk, NoCacheCondition
 from xrpl.clients                       import WebsocketClient
+from requests                           import get
 from typing                             import Union
+
+from airdrop import console
 
 SELECTED_TRUSTLINE: Union[None, tuple[str, str]]              = None
 
@@ -87,6 +91,55 @@ def get_client() -> WebsocketClient:
         XRPL_CLIENT = WebsocketClient("wss://xrplcluster.com/")
 
     return XRPL_CLIENT
+
+
+@cache_to_disk()
+def fetch_xrpl_metadata() -> dict[str, list[tuple[str, Union[None, str]]]]:
+    """Fetches all token metadata from XRPMetadata.
+
+    Returns:
+        dict[str, list[tuple[str, Union[None, str]]]]: Dictionary containing issuing addresses and all the tokens they've issued as a tuple list.
+
+    Raises:
+        NoCacheCondition: If the HTTP request(s) fail we disable caching for the output.
+    """
+
+    results: dict[str, list[tuple[str, Union[None, str]]]] = { }
+
+    iter_step  = 100
+    iterations = 0
+
+    response = get("https://s1.xrplmeta.org/tokens", params={ "limit": iter_step, "trust_level": [ 1, 2, 3 ] }).json()
+
+    try:
+        while True:
+
+            for token in response["tokens"]:
+
+                metadata = token["meta"]["token"]
+                issuer   = token["issuer"]
+
+                if token["issuer"] not in results:
+                    results[issuer] = [ ]
+
+                    id   = token["currency"]
+                    name = None
+
+                    if "name" in metadata:
+                        name = metadata["name"]
+
+                    results[issuer].append((id, name))
+
+            if response["count"] <= iterations:
+                break
+
+            response = get("https://s1.xrplmeta.org/tokens", params={ "limit": iter_step, "trust_level": [ 1, 2, 3 ], "offset": iterations }).json()
+            iterations += iter_step
+
+        return results
+
+    except:
+        raise NoCacheCondition()
 
 
 def fetch_trustlines(address: str, token_id: str, client: WebsocketClient) -> list[(str, str)]:
