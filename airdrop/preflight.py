@@ -1,15 +1,16 @@
 """Operations, otherwise known as steps that the airdrop program has to take to complete it's task."""
 """Author: spunk-developer <xspunk.developer@gmail.com>                                            """
 
-from rich.prompt import IntPrompt, Confirm, Prompt
-from rich.layout import Layout
-from rich.align  import Align
-from rich.panel  import Panel
-from rich.text   import Text
-from decimal     import Decimal
-from typing      import Union
-from typer       import Exit
-from os          import path
+from cache_to_disk import delete_disk_caches_for_function, delete_old_disk_caches
+from rich.prompt   import IntPrompt, Confirm, Prompt
+from rich.layout   import Layout
+from rich.align    import Align
+from rich.panel    import Panel
+from rich.text     import Text
+from decimal       import Decimal
+from typing        import Union
+from typer         import Exit
+from os            import path
 
 from airdrop.cache import accept_terms_of_use, get_terms_of_use
 from airdrop.calc  import set_airdrop_budget, get_budget
@@ -51,6 +52,29 @@ def get_layout_with_renderable(renderable) -> Layout:
     return layout
 
 
+def preflight_check_cache() -> None:
+    """Confirms with user if they want to use pre-existing cache or not."""
+    delete_old_disk_caches()
+
+    if not isinstance(fetch_xrpl_metadata.cache_size(), type(None)):
+
+        user_input = console.input(i18n.rehydrate.metadata_cache)
+
+        while True:
+
+            if len(user_input) == 0 or user_input.lower() == "yes" or user_input.lower() == "y":
+                break
+
+            if user_input.lower() == "no" or user_input.lower() == "n":
+
+                delete_disk_caches_for_function("fetch_xrpl_metadata")
+                break
+
+            user_input = console.input(i18n.rehydrate.metadata_error)
+
+        console.clear()
+
+
 def preflight_print_banner() -> None:
     """Generates and prints the Airdrop application banner.
 
@@ -76,7 +100,8 @@ def preflight_print_banner() -> None:
 
                 user_input = console.input(i18n.preflight.terms_error)
 
-            console.clear()
+        else:
+            console.print(get_layout_with_renderable(""))
 
     # If an error happened for *any* reason, we can safely assume the console environment is completely fucked and unusable.
     except:
@@ -388,3 +413,5 @@ def preflight_confirm():
 
     if confirm is not True:
         raise Exit()
+    else:
+        console.clear()

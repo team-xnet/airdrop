@@ -5,11 +5,10 @@ from pathlib       import Path
 from typing        import Optional
 from typer         import Option, Exit
 
-from airdrop.preflight import preflight_validate_yielding_address, preflight_validate_issuing_address, preflight_validate_supply_balance, preflight_fetch_metadata, preflight_validate_output, preflight_print_banner, preflight_confirm
+from airdrop.preflight import preflight_validate_yielding_address, preflight_validate_issuing_address, preflight_validate_supply_balance, preflight_fetch_metadata, preflight_validate_output, preflight_print_banner, preflight_check_cache, preflight_confirm
 from airdrop.steps     import step_begin_airdrop_calculations, step_fetch_trustline_balances, step_calculate_airdrop_yield, step_end_airdrop_calculations, step_fetch_issuer_trustlines
-from airdrop.cache     import rehydrate_metadata_cache, rehydrate_terms_of_use
+from airdrop.cache     import rehydrate_terms_of_use
 from airdrop           import __app_version__, __app_name__, console
-
 
 def get_version(value: bool) -> None:
     if value:
@@ -57,10 +56,11 @@ def main(
 ) -> None:
 
     # Pre-preflight stuff
+    console.clear()
     rehydrate_terms_of_use()
-    rehydrate_metadata_cache()
 
     # Preflight stuff
+    preflight_check_cache()
     preflight_print_banner()
     preflight_fetch_metadata(issuing_address, yielding_address, budget, csv)
     preflight_validate_issuing_address(issuing_address)

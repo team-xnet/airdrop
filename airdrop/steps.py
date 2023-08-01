@@ -45,7 +45,7 @@ def step_begin_airdrop_calculations():
         ("." , "#00EFF5"), ("." , "#39F3F2"), ("." , "#57F6F0")
     )
 
-    console.print(Padding(start_marker, (1, 3)))
+    console.print(Padding(start_marker, (1, 2)))
 
 
 def step_fetch_issuer_trustlines():
