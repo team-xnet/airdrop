@@ -7,7 +7,6 @@ from rich.layout   import Layout
 from rich.align    import Align
 from rich.panel    import Panel
 from rich.text     import Text
-from decimal       import Decimal
 from typing        import Union
 from typer         import Exit
 from os            import path
@@ -270,7 +269,7 @@ def preflight_validate_yielding_address(address) -> None:
                 token      = choices[chosen_idx - 1]
 
             else:
-                token = XRPL_METADATA[address]
+                token = XRPL_METADATA[address][0]
 
     if not update_yielding_token(token[0], token[1]):
         console.print(t(i18n.preflight.error_yielding_overwrite, address=address))

@@ -117,7 +117,12 @@ def step_fetch_trustline_balances():
 
                     status.update(t(i18n.steps.balances_fetch_account, address=trustline, token=name))
 
-                    FETCHED_TRUSTLINE_BALANCES[trustline] = fetch_account_balance(trustline, token, client)
+                    balance = fetch_account_balance(trustline, token, client)
+
+                    if isinstance(balance, type(None)) or balance.is_zero():
+                        continue
+
+                    FETCHED_TRUSTLINE_BALANCES[trustline] = balance
 
                 status.stop()
                 # @NOTE(spunk-developer): Add checkmark to the start of this message
@@ -139,6 +144,8 @@ def step_calculate_airdrop_yield():
     with console.status(i18n.steps.yield_sum, spinner="dots") as status:
 
         status.start()
+
+        console.print(type(FETCHED_TRUSTLINE_BALANCES.values()))
 
         increment_airdrop_sum(FETCHED_TRUSTLINE_BALANCES.values())
         if not calculate_airdrop_ratio():
