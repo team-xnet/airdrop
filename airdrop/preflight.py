@@ -7,7 +7,6 @@ from rich.layout   import Layout
 from rich.align    import Align
 from rich.panel    import Panel
 from rich.text     import Text
-from decimal       import Decimal
 from typing        import Union
 from typer         import Exit
 from os            import path
@@ -100,8 +99,9 @@ def preflight_print_banner() -> None:
 
                 user_input = console.input(i18n.preflight.terms_error)
 
-        else:
-            console.print(get_layout_with_renderable(""))
+            console.clear()
+
+        console.print(get_layout_with_renderable(""))
 
     # If an error happened for *any* reason, we can safely assume the console environment is completely fucked and unusable.
     except:
