@@ -7,6 +7,7 @@ from xrpl.utils                         import drops_to_xrp
 from cache_to_disk                      import cache_to_disk, NoCacheCondition
 from xrpl.clients                       import WebsocketClient
 from requests                           import get
+from decimal                            import Decimal
 from typing                             import Union
 
 from airdrop import console
@@ -182,7 +183,7 @@ def fetch_trustlines(address: str, token_id: str, client: WebsocketClient) -> li
     return results
 
 
-def fetch_account_balance(address: str, token: str, client: WebsocketClient) -> float:
+def fetch_account_balance(address: str, token: str, client: WebsocketClient) -> Decimal:
     """Fetches XRP balance & ALL trustline token balances for a given account.
 
     Args:
@@ -225,11 +226,11 @@ def fetch_account_balance(address: str, token: str, client: WebsocketClient) -> 
             balance = trustline["balance"]
 
             try:
-                if not type(balance) is float:
-                    balance = float(balance)
+                if not isinstance(balance, type(Decimal)):
+                    balance = Decimal(balance)
 
             except:
-                balance = float(0)
+                balance = Decimal()
 
             return balance
 

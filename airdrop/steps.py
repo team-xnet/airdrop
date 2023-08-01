@@ -7,6 +7,7 @@ from rich.table    import Table
 from rich.panel    import Panel
 from rich.text     import Text
 from datetime      import timedelta
+from decimal       import Decimal
 from typing        import Union
 from typer         import Exit
 from time          import time
@@ -18,11 +19,11 @@ from airdrop      import console, i18n, t
 
 AIRDROP_START_TIME:         Union[None, float] = None
 
-FETCHED_TRUSTLINE_BALANCES: dict[str, float]   = { }
+FETCHED_TRUSTLINE_BALANCES: dict[str, Decimal] = { }
 
 FETCHED_TARGET_TRUSTLINES:  list[str]          = [ ]
 
-INDIVIDUAL_TRUSTILE_YIELD:  dict[str, float]   = { }
+INDIVIDUAL_TRUSTILE_YIELD:  dict[str, Decimal] = { }
 
 def step_begin_airdrop_calculations():
     """Prints the beginning message and takes a time snapshot for future timings."""
@@ -178,6 +179,8 @@ def step_end_airdrop_calculations():
     """
 
     global FETCHED_TRUSTLINE_BALANCES, INDIVIDUAL_TRUSTILE_YIELD, FETCHED_TARGET_TRUSTLINES, AIRDROP_START_TIME
+
+    console.clear()
 
     yielding_metadata = get_yielding()
     ratio             = get_ratio()

@@ -407,7 +407,7 @@ def preflight_confirm():
         else:
             final_yielding = yielding[0]
 
-    final_budget = f'{ Decimal(budget).normalize() }'
+    final_budget = f'{ budget }'
 
     confirm = Confirm.ask(t(i18n.preflight.confirm_preflight, issuing=final_issuing, yielding=final_yielding, budget=final_budget, csv=csv), default=True)
 

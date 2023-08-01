@@ -4,28 +4,28 @@
 from decimal import Decimal
 from typing  import Union
 
-AIRDROP_TOTAL_SUM:    Decimal            = Decimal(0.0)
+AIRDROP_TOTAL_SUM:    Decimal              = Decimal(0.0)
 
-AIRDROP_TOTAL_BUDGET: Union[None, float] = None
+AIRDROP_TOTAL_BUDGET: Union[None, Decimal] = None
 
-AIRDROP_RATIO:        Union[None, float] = None
+AIRDROP_RATIO:        Union[None, Decimal] = None
 
-def get_budget() -> Union[None, float]:
+def get_budget() -> Union[None, Decimal]:
     """Returns the current airdrop budget state.
 
     Returns:
-        Union[None, float]: The airdrop budget.
+        Union[None, Decimal]: The airdrop budget.
     """
 
     global AIRDROP_TOTAL_BUDGET
     return AIRDROP_TOTAL_BUDGET
 
 
-def get_ratio() -> Union[None, str]:
+def get_ratio() -> Union[None, Decimal]:
     """Returns the current airdrop ratio.
 
     Returns:
-        Union[None, str]: The ratio, which is the budget divided by ratio.
+        Union[None, Decimal]: The ratio, which is the budget divided by ratio.
     """
     global AIRDROP_RATIO
     return AIRDROP_RATIO
@@ -54,22 +54,24 @@ def set_airdrop_budget(amount: Union[float, int]) -> bool:
 
     global AIRDROP_TOTAL_BUDGET
 
-    if isinstance(amount, type(int)):
-        amount = float(amount)
+    try:
 
-    if isinstance(AIRDROP_TOTAL_BUDGET, type(None)):
-        AIRDROP_TOTAL_BUDGET = amount
+        if isinstance(AIRDROP_TOTAL_BUDGET, type(None)):
+            AIRDROP_TOTAL_BUDGET = Decimal(amount)
 
-        return True
+            return True
 
-    return False
+        return False
+
+    except:
+        return False
 
 
-def increment_airdrop_sum(amount: Union[float, list[float]]) -> None:
+def increment_airdrop_sum(amount: Union[Decimal, list[Decimal]]) -> None:
     """Increments the total airdrop sum, which is the total sum of all airdrop balances.
 
     Args:
-        amount (Union[float, list[float]]): The amount which to increment with.
+        amount (Union[Decimal, list[Decimal]]): The amount which to increment with.
     """
 
     global AIRDROP_TOTAL_SUM
@@ -91,7 +93,7 @@ def calculate_airdrop_ratio() -> bool:
 
     global AIRDROP_TOTAL_BUDGET, AIRDROP_TOTAL_SUM, AIRDROP_RATIO
 
-    if isinstance(AIRDROP_TOTAL_BUDGET, type(None)) or AIRDROP_TOTAL_SUM == 0.0:
+    if isinstance(AIRDROP_TOTAL_BUDGET, type(None)) or AIRDROP_TOTAL_BUDGET.is_zero():
         return False
 
     AIRDROP_RATIO = AIRDROP_TOTAL_BUDGET / AIRDROP_TOTAL_SUM
