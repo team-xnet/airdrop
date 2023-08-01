@@ -1,13 +1,14 @@
 """Calculation functions.                              """
 """Author: spunk-developer <xspunk.developer@gmail.com>"""
 
-from typing import Union
+from decimal import Decimal
+from typing  import Union
+
+AIRDROP_TOTAL_SUM:    Decimal            = Decimal(0.0)
 
 AIRDROP_TOTAL_BUDGET: Union[None, float] = None
 
 AIRDROP_RATIO:        Union[None, float] = None
-
-AIRDROP_TOTAL_SUM:    float              = 0.0
 
 def get_budget() -> Union[None, float]:
     """Returns the current airdrop budget state.
@@ -26,6 +27,8 @@ def get_ratio() -> Union[None, str]:
     Returns:
         Union[None, str]: The ratio, which is the budget divided by ratio.
     """
+    global AIRDROP_RATIO
+    return AIRDROP_RATIO
 
 
 def get_sum() -> float:

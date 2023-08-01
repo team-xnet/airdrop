@@ -68,7 +68,7 @@ def step_fetch_issuer_trustlines():
         with console.status(t(i18n.steps.trustlines_fetch, address=address), spinner="dots") as status:
             try:
                 status.start()
-                FETCHED_TARGET_TRUSTLINES = fetch_trustlines(address, token, client)
+                FETCHED_TARGET_TRUSTLINES = fetch_trustlines(address, token[0], client)
                 status.stop()
 
             except Exception:
