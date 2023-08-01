@@ -3,6 +3,7 @@
 
 from xrpl.models.requests.account_lines import AccountLines
 from xrpl.models.requests.account_info  import AccountInfo
+from xrpl.utils                         import drops_to_xrp
 from cache_to_disk                      import cache_to_disk, NoCacheCondition
 from xrpl.clients                       import WebsocketClient
 from requests                           import get
@@ -16,11 +17,11 @@ YIELDING_TOKEN:     Union[None, tuple[str, Union[None, str]]] = None
 
 XRPL_CLIENT:        Union[None, WebsocketClient]              = None
 
-def get_issuer() -> Union[None, tuple[str, str]]:
+def get_issuer() -> Union[None, tuple[str, Union[None, str]]]:
     """Returns the current state for the issuer token.
 
     Returns:
-        Union[None, tuple[str, str]]: Current issuer token state.
+        Union[None, tuple[str, Union[None, str]]]: Current issuer token state.
     """
 
     global SELECTED_TRUSTLINE
@@ -204,10 +205,10 @@ def fetch_account_balance(address: str, token: str, client: WebsocketClient) -> 
 
         balance = response.result["account_data"]["Balance"]
 
-        if not type(balance) is float:
-            balance = float(balance)
+        if isinstance(balance, type(None)):
+            raise AssertionError
 
-        return balance
+        return drops_to_xrp(balance)
 
     request  = AccountLines(account=address, ledger_index="validated")
     response = client.request(request)
