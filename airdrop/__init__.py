@@ -43,8 +43,9 @@ class I18NPreflight():
 
     # Input issuing address
     choose_token           = Template('We detected [prominent]${total}[/prominent] tokens issued by address [prominent]${address}[/prominent]:\n\n${tokens}\n\nPlease enter the number of one from the list above')
-    enter_issuer           = Template('[prominent](${step}/${maximum})[/prominent] Enter source token issuing address')
-    error_issuer_invalid   = Template('[[error]FAIL[/error]] Issuing address "${address}" isn\'t a known token issuing address. Please make sure you have entered the address correctly, and that one or more tokens issued by this address has a trust level of 1 or greater on the XRPL')
+    enter_issuer           = Template('[prominent](${step}/${maximum})[/prominent] Enter source token issuing address: ')
+    error_issuer_invalid   = Template('Issuing address "${address}" isn\'t a known token issuing address. Please make sure you have entered the address correctly and try again: ')
+    error_issuer_missing   = Template('[[error]FAIL[/error]] Issuing address "${address}" isn\'t a known token issuing address. Please make sure you have entered the address correctly, and that one or more tokens issued by this address has a trust level of 1 or greater on the XRPL')
     error_issuer_overwrite = Template('[[error]FAIL[/error]] Source issuing address "${address}" cannot be set, as overwriting the source issuing address is forbidden')
 
     # Input budget validation

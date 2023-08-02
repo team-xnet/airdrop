@@ -167,10 +167,20 @@ def preflight_validate_issuing_address(address) -> None:
     REQUIRED_PARAMS_VISITED += 1
 
     if isinstance(address, type(None)):
-        address = Prompt.ask(t(i18n.preflight.enter_issuer, address=address, step=REQUIRED_PARAMS_VISITED, maximum=REQUIRED_PARAMS_MISSING))
 
-    if address not in XRPL_METADATA:
-        console.print(t(i18n.preflight.error_issuer_invalid, address=address))
+        user_input = console.input(t(i18n.preflight.enter_issuer, address=address, step=REQUIRED_PARAMS_VISITED, maximum=REQUIRED_PARAMS_MISSING))
+
+        while True:
+
+            if user_input in XRPL_METADATA:
+                break
+
+            user_input = console.input(t(i18n.preflight.error_issuer_invalid, address=user_input))
+
+        console.clear()
+
+    elif address not in XRPL_METADATA:
+        console.print(t(i18n.preflight.error_issuer_missing, address=address))
         raise Exit()
 
     issued_tokens_len = len(XRPL_METADATA[address])
