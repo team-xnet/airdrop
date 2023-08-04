@@ -104,17 +104,19 @@ def step_fetch_trustline_balances():
     with get_client() as client:
         with console.status(i18n.steps.balances_fetch, spinner="dots") as status:
 
+            trustlines = FETCHED_TARGET_TRUSTLINES.copy()
+
             status.start()
 
             while True:
 
-                trustline  = FETCHED_TARGET_TRUSTLINES.pop()
+                trustline  = trustlines.pop()
                 fail_timer = None
 
                 try:
 
                     if trustline in FETCHED_TRUSTLINE_BALANCES:
-                        trustline = FETCHED_TARGET_TRUSTLINES.pop()
+                        trustline = trustlines.pop()
                         continue
 
                     if isinstance(fail_timer, type(None)):
@@ -130,10 +132,10 @@ def step_fetch_trustline_balances():
 
                     FETCHED_TRUSTLINE_BALANCES[trustline] = balance
 
-                    if len(FETCHED_TARGET_TRUSTLINES) == 0:
+                    if len(trustlines) == 0:
                         break
 
-                    trustline = FETCHED_TARGET_TRUSTLINES.pop()
+                    trustline = trustlines.pop()
 
                 except:
 
@@ -141,7 +143,12 @@ def step_fetch_trustline_balances():
                         fail_timer = 10
 
                     else:
-                        fail_timer = fail_timer * 2
+
+                        if fail_timer < 300:
+                            fail_timer = fail_timer * 2
+
+                        else:
+                            fail_timer = 300
 
                         for delta in range(fail_timer):
                             status.update(t(i18n.steps.error_balances, address=trustline, delta=delta))

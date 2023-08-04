@@ -164,9 +164,9 @@ def preflight_validate_issuing_address(address) -> None:
 
     global REQUIRED_PARAMS_MISSING, REQUIRED_PARAMS_VISITED, XRPL_METADATA
 
-    REQUIRED_PARAMS_VISITED += 1
-
     if isinstance(address, type(None)):
+
+        REQUIRED_PARAMS_VISITED += 1
 
         user_input = console.input(t(i18n.preflight.enter_issuer, address=address, step=REQUIRED_PARAMS_VISITED, maximum=REQUIRED_PARAMS_MISSING))
 
@@ -234,11 +234,11 @@ def preflight_validate_yielding_address(address) -> None:
 
     global REQUIRED_PARAMS_MISSING, REQUIRED_PARAMS_VISITED
 
-    REQUIRED_PARAMS_VISITED += 1
-
     token = None
 
     if isinstance(address, type(None)):
+
+        REQUIRED_PARAMS_VISITED += 1
 
         user_input = console.input(t(i18n.preflight.enter_yielding, step=REQUIRED_PARAMS_VISITED, maximum=REQUIRED_PARAMS_MISSING))
 
@@ -317,10 +317,10 @@ def preflight_validate_supply_balance(input) -> None:
     """
     global REQUIRED_PARAMS_MISSING, REQUIRED_PARAMS_VISITED
 
-    REQUIRED_PARAMS_VISITED += 1
-
     # In the case that balance wasn't passed into the CLI as a parameter, we ask the user directly.
     if isinstance(input, type(None)):
+        REQUIRED_PARAMS_VISITED += 1
+
         input = Prompt.ask(t(i18n.preflight.enter_balance, step=REQUIRED_PARAMS_VISITED, maximum=REQUIRED_PARAMS_MISSING), default=0)
 
     # We parse the actual input into a float or an int. If this fails, the error is raised to the caller.
@@ -356,9 +356,9 @@ def preflight_validate_output(output_path) -> None:
 
     global REQUIRED_PARAMS_MISSING, REQUIRED_PARAMS_VISITED
 
-    REQUIRED_PARAMS_VISITED += 1
-
     if isinstance(output_path, type(None)):
+
+        REQUIRED_PARAMS_VISITED += 1
 
         if Confirm.ask(t(i18n.preflight.confirm_csv, step=REQUIRED_PARAMS_VISITED, maximum=REQUIRED_PARAMS_MISSING), default=True) is False:
             return
