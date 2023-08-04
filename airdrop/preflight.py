@@ -177,6 +177,7 @@ def preflight_validate_issuing_address(address) -> None:
 
             user_input = console.input(t(i18n.preflight.error_issuer_invalid, address=user_input))
 
+        address = user_input
         console.clear()
 
     elif address not in XRPL_METADATA:
@@ -235,52 +236,70 @@ def preflight_validate_yielding_address(address) -> None:
 
     REQUIRED_PARAMS_VISITED += 1
 
-    if isinstance(address, type(None)):
-        address = Prompt.ask(t(i18n.preflight.enter_yielding, step=REQUIRED_PARAMS_VISITED, maximum=REQUIRED_PARAMS_MISSING))
-        token = None
+    token = None
 
+    if isinstance(address, type(None)):
+
+        user_input = console.input(t(i18n.preflight.enter_yielding, step=REQUIRED_PARAMS_VISITED, maximum=REQUIRED_PARAMS_MISSING))
+
+        while True:
+
+            if user_input.lower() == "xrp":
+                token = ("XRP", None)
+                break
+
+            if user_input in XRPL_METADATA:
+                break
+
+            user_input = console.input(t(i18n.preflight.error_issuer_invalid, address=address))
+
+        address = user_input
+        console.clear()
+
+    else:
         if address not in XRPL_METADATA:
 
-            if address.lower() != "xrp":
-                console.print(t(i18n.preflight.error_issuer_invalid, address=address))
-                raise Exit()
-
-            token = ("XRP", None)
-
-        else:
-            issued_tokens = XRPL_METADATA[address]
-
-            issued_tokens_len = len(issued_tokens)
-
-            if issued_tokens_len >= 2:
-
-                choice_list = ""
-                choice_idx  = [ ]
-                choices     = [ ]
-                idx         = 0
-
-                for id, name in XRPL_METADATA[address]:
-
-                    newline = "\n"
-                    idx    += 1
-
-                    choice_idx.append(f'{ idx }')
-                    choices.append((id, name))
-
-                    if idx == len(XRPL_METADATA[address]):
-                        newline = ""
-
-                    if type(name) is str:
-                        choice_list += f"{ idx }: { name }{ newline }"
-                        continue
-
-                    choice_list += f"{ idx }: { id }{ newline }"
-
-                chosen_idx = IntPrompt.ask(t(i18n.preflight.choose_token, address=str(address), tokens=choice_list, total=issued_tokens_len), choices=choice_idx)
-                token      = choices[chosen_idx - 1]
+            if type(address) is str and address.lower() == "xrp":
+                token = ("XRP", None)
 
             else:
-                token = XRPL_METADATA[address][0]
+                console.print(t(i18n.preflight.error_yielding_missing, address=address))
+                raise Exit()
+
+    if address.lower() != "xrp":
+        issued_tokens = XRPL_METADATA[address]
+
+        issued_tokens_len = len(issued_tokens)
+
+        if issued_tokens_len >= 2:
+
+            choice_list = ""
+            choice_idx  = [ ]
+            choices     = [ ]
+            idx         = 0
+
+            for id, name in XRPL_METADATA[address]:
+
+                newline = "\n"
+                idx    += 1
+
+                choice_idx.append(f'{ idx }')
+                choices.append((id, name))
+
+                if idx == len(XRPL_METADATA[address]):
+                    newline = ""
+
+                if type(name) is str:
+                    choice_list += f"{ idx }: { name }{ newline }"
+                    continue
+
+                choice_list += f"{ idx }: { id }{ newline }"
+
+            chosen_idx = IntPrompt.ask(t(i18n.preflight.choose_token, address=str(address), tokens=choice_list, total=issued_tokens_len), choices=choice_idx)
+            token      = choices[chosen_idx - 1]
+
+        else:
+            token = XRPL_METADATA[address][0]
 
     if not update_yielding_token(token[0], token[1]):
         console.print(t(i18n.preflight.error_yielding_overwrite, address=address))

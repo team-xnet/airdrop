@@ -38,7 +38,9 @@ class I18NPreflight():
     error_fetch_failed = "[[error]FAIL[/error]] Failed fetching prequisite metadata. Make sure you have an active internet connection, and that XRPLMeta services are available."
 
     # Input yielding address
-    enter_yielding           = Template('[prominent](${step}/${maximum})[/prominent] Enter yield token issuing address or "XRP" for XRP yield')
+    enter_yielding           = Template('[prominent](${step}/${maximum})[/prominent] Enter yield token issuing address or "XRP" for XRP yield: ')
+    error_yielding_invalid   = Template('Issuing address "${address}" isn\'t a known token issuing address. Please make sure you have entered the address correctly or input "XRP" for XRP yield and try again: ')
+    error_yielding_missing   = Template('[[error]FAIL[/error]] Yielding address "${address}" isn\'t a known token issuing address. Please make sure you have entered the address correctly, and that one or more tokens issued by this address has a trust level of 1 or greater on the XRPL. If the intent was to use XRP as the yielding token, simply enter "XRP" as the yielding token parameter')
     error_yielding_overwrite = Template('[[error]FAIL[/error]] Yielding issuing address "${address}" cannot be set, as overwriting the yielding issuing address is forbidden')
 
     # Input issuing address
@@ -81,7 +83,7 @@ class I18NSteps():
     balances_fetch         = "[[info]WORKING[/info]] Fetching trustline balances..."
     balances_fetch_account = Template('[[info]WORKING[/info]] Fetching [prominent]${token}[/prominent] for trustline address [prominent]${address}[/prominent]...')
     balances_fetch_success = Template('[[success]SUCCESS[/success]] Successfully fetched balances for [prominent]${count}[/prominent] trustlines in [prominent]${delta}[/prominent]')
-    error_balances         = "[[error]FAIL[/error]] Could not fetch remaining account balances. This could be due to XRPL rate limiting, or due to connection issues"
+    error_balances         = Template('[[info]WORKING[/info]] Failed fetching balance for trustline [prominent]${address}[/prominent] due to rate limiting, waiting for [prominent]${delta}[/prominent] seconds before trying again...')
 
     # Print yield
     error_saving_csv = Template('[[error]FAIL[/error]] Could not save output CSV file to path "${}". Please make sure you have correct permissions to write to this location and try again')

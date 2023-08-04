@@ -10,7 +10,7 @@ from datetime      import timedelta
 from decimal       import Decimal
 from typing        import Union
 from typer         import Exit
-from time          import time
+from time          import sleep, time
 
 from airdrop.xrpl import fetch_account_balance, fetch_trustlines, get_yielding, get_client, get_issuer
 from airdrop.calc import calculate_airdrop_ratio, calculate_yield, increment_airdrop_sum, get_ratio, get_sum
@@ -72,9 +72,9 @@ def step_fetch_issuer_trustlines():
                 FETCHED_TARGET_TRUSTLINES = fetch_trustlines(address, token[0], client)
                 status.stop()
 
-            except Exception:
+            except Exception as e:
                 status.stop()
-                # @NOTE(spunk-developer): Rate limiting?
+                console.print(e)
                 console.print(t(i18n.steps.error_trustline_fetch, address=address))
                 raise Exit()
 
@@ -106,33 +106,51 @@ def step_fetch_trustline_balances():
 
             status.start()
 
-            try:
-                for trustline in FETCHED_TARGET_TRUSTLINES:
+            while True:
+
+                trustline  = FETCHED_TARGET_TRUSTLINES.pop()
+                fail_timer = None
+
+                try:
 
                     if trustline in FETCHED_TRUSTLINE_BALANCES:
+                        trustline = FETCHED_TARGET_TRUSTLINES.pop()
                         continue
 
-                    if FETCHED_TARGET_TRUSTLINES.index(trustline) >= 25:
-                        break
-
-                    status.update(t(i18n.steps.balances_fetch_account, address=trustline, token=name))
+                    if isinstance(fail_timer, type(None)):
+                        status.update(t(i18n.steps.balances_fetch_account, address=trustline, token=name))
 
                     balance = fetch_account_balance(trustline, token, client)
 
                     if isinstance(balance, type(None)) or balance.is_zero():
                         continue
 
+                    if not isinstance(fail_timer, type(None)):
+                        fail_timer = None
+
                     FETCHED_TRUSTLINE_BALANCES[trustline] = balance
 
-                status.stop()
-                # @NOTE(spunk-developer): Add checkmark to the start of this message
-                console.print(t(i18n.steps.balances_fetch_success, count=len(FETCHED_TRUSTLINE_BALANCES), delta=timedelta(seconds=int(time() - start_time))))
+                    if len(FETCHED_TARGET_TRUSTLINES) == 0:
+                        break
 
-            except:
-                status.stop()
-                # @NOTE(spunk-developer): More rate limiting stuff
-                console.print(i18n.steps.error_balances)
-                raise Exit()
+                    trustline = FETCHED_TARGET_TRUSTLINES.pop()
+
+                except:
+
+                    if isinstance(fail_timer, type(None)):
+                        fail_timer = 10
+
+                    else:
+                        fail_timer = fail_timer * 2
+
+                        for delta in range(fail_timer):
+                            status.update(t(i18n.steps.error_balances, address=trustline, delta=delta))
+
+                            sleep(1)
+
+            status.stop()
+            console.print(t(i18n.steps.balances_fetch_success, count=len(FETCHED_TRUSTLINE_BALANCES), delta=timedelta(seconds=int(time() - start_time))))
+
 
 
 def step_calculate_airdrop_yield():
@@ -144,8 +162,6 @@ def step_calculate_airdrop_yield():
     with console.status(i18n.steps.yield_sum, spinner="dots") as status:
 
         status.start()
-
-        console.print(type(FETCHED_TRUSTLINE_BALANCES.values()))
 
         increment_airdrop_sum(FETCHED_TRUSTLINE_BALANCES.values())
         if not calculate_airdrop_ratio():
