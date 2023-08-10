@@ -72,9 +72,8 @@ def step_fetch_issuer_trustlines():
                 FETCHED_TARGET_TRUSTLINES = fetch_trustlines(address, token[0], client)
                 status.stop()
 
-            except Exception as e:
+            except:
                 status.stop()
-                console.print(e)
                 console.print(t(i18n.steps.error_trustline_fetch, address=address))
                 raise Exit()
 
@@ -101,62 +100,63 @@ def step_fetch_trustline_balances():
 
     start_time = time()
 
-    with get_client() as client:
-        with console.status(i18n.steps.balances_fetch, spinner="dots") as status:
+    with console.status(i18n.steps.balances_fetch, spinner="dots") as status:
 
-            trustlines = FETCHED_TARGET_TRUSTLINES.copy()
+        trustlines = FETCHED_TARGET_TRUSTLINES.copy()
 
-            status.start()
+        status.start()
 
-            while True:
+        trustline  = trustlines.pop()
+        client     = get_client()
+        fail_timer = None
 
-                trustline  = trustlines.pop()
-                fail_timer = None
+        while True:
+            try:
+                if not client.is_open():
+                    client.open()
 
-                try:
-
-                    if trustline in FETCHED_TRUSTLINE_BALANCES:
-                        trustline = trustlines.pop()
-                        continue
-
-                    if isinstance(fail_timer, type(None)):
-                        status.update(t(i18n.steps.balances_fetch_account, address=trustline, token=name))
-
-                    balance = fetch_account_balance(trustline, token, client)
-
-                    if isinstance(balance, type(None)) or balance.is_zero():
-                        continue
-
-                    if not isinstance(fail_timer, type(None)):
-                        fail_timer = None
-
-                    FETCHED_TRUSTLINE_BALANCES[trustline] = balance
-
-                    if len(trustlines) == 0:
-                        break
-
+                if trustline in FETCHED_TRUSTLINE_BALANCES:
                     trustline = trustlines.pop()
+                    continue
 
-                except:
+                if isinstance(fail_timer, type(None)):
+                    status.update(t(i18n.steps.balances_fetch_account, address=trustline, token=name))
 
-                    if isinstance(fail_timer, type(None)):
-                        fail_timer = 10
+                balance = fetch_account_balance(trustline, token, client)
+
+                if isinstance(balance, type(None)) or balance.is_zero():
+                    continue
+
+                if not isinstance(fail_timer, type(None)):
+                    fail_timer = None
+
+                FETCHED_TRUSTLINE_BALANCES[trustline] = balance
+
+                if len(trustlines) == 0:
+                    break
+
+                trustline = trustlines.pop()
+
+            except:
+
+                if isinstance(fail_timer, type(None)):
+                    fail_timer = 10
+
+                else:
+
+                    if fail_timer < 300:
+                        fail_timer = fail_timer * 2
 
                     else:
+                        fail_timer = 300
 
-                        if fail_timer < 300:
-                            fail_timer = fail_timer * 2
+                    for delta in reversed(range(fail_timer)):
+                        status.update(t(i18n.steps.error_balances, address=trustline, delta=delta))
 
-                        else:
-                            fail_timer = 300
+                        sleep(1)
 
-                        for delta in range(fail_timer):
-                            status.update(t(i18n.steps.error_balances, address=trustline, delta=delta))
-
-                            sleep(1)
-
-            status.stop()
-            console.print(t(i18n.steps.balances_fetch_success, count=len(FETCHED_TRUSTLINE_BALANCES), delta=timedelta(seconds=int(time() - start_time))))
+        status.stop()
+        console.print(t(i18n.steps.balances_fetch_success, count=len(FETCHED_TRUSTLINE_BALANCES), delta=timedelta(seconds=int(time() - start_time))))
 
 
 

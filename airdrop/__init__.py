@@ -81,7 +81,7 @@ class I18NSteps():
 
     # Balances fetch
     balances_fetch         = "[[info]WORKING[/info]] Fetching trustline balances..."
-    balances_fetch_account = Template('[[info]WORKING[/info]] Fetching [prominent]${token}[/prominent] for trustline address [prominent]${address}[/prominent]...')
+    balances_fetch_account = Template('[[info]WORKING[/info]] Fetching [prominent]${token}[/prominent] balance for trustline address [prominent]${address}[/prominent]...')
     balances_fetch_success = Template('[[success]SUCCESS[/success]] Successfully fetched balances for [prominent]${count}[/prominent] trustlines in [prominent]${delta}[/prominent]')
     error_balances         = Template('[[info]WORKING[/info]] Failed fetching balance for trustline [prominent]${address}[/prominent] due to rate limiting, waiting for [prominent]${delta}[/prominent] seconds before trying again...')
 

@@ -89,10 +89,19 @@ def get_client() -> WebsocketClient:
     """
     global XRPL_CLIENT
 
-    if isinstance(XRPL_CLIENT, type(None)):
-        XRPL_CLIENT = WebsocketClient("wss://xrplcluster.com/")
+    try:
+        if isinstance(XRPL_CLIENT, type(None)):
+            XRPL_CLIENT = WebsocketClient("wss://xrplcluster.com/")
 
-    return XRPL_CLIENT
+        if not XRPL_CLIENT.is_open():
+            XRPL_CLIENT.open()
+
+        return XRPL_CLIENT
+
+    except:
+        XRPL_CLIENT.close()
+
+        return XRPL_CLIENT
 
 
 @cache_to_disk()
