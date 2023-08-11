@@ -3,12 +3,15 @@
 
 from pathlib       import Path
 from typing        import Optional
-from typer         import Option, Exit
+from typer         import Option, Typer, Exit
 
 from airdrop.preflight import preflight_validate_yielding_address, preflight_validate_issuing_address, preflight_validate_supply_balance, preflight_fetch_metadata, preflight_validate_output, preflight_print_banner, preflight_check_cache, preflight_confirm
 from airdrop.steps     import step_begin_airdrop_calculations, step_fetch_trustline_balances, step_calculate_airdrop_yield, step_end_airdrop_calculations, step_fetch_issuer_trustlines
 from airdrop.cache     import rehydrate_terms_of_use
 from airdrop           import __app_version__, __app_name__, console
+
+cli = Typer()
+
 
 def get_version(value: bool) -> None:
     if value:
@@ -16,7 +19,36 @@ def get_version(value: bool) -> None:
         raise Exit()
 
 
-def main(
+@cli.command(help="Parses and distributes calculated airdrop yield to given trustline addresses.")
+def distribute(
+    budget: Optional[float] = Option(
+        None,
+        "--budget",
+        "-b",
+        help="Specifies the total airdrop supply budget that was used previously."
+    ),
+    ratio: Optional[float] = Option(
+        None,
+        "--ratio",
+        "-r",
+        help="Final calculated ratio for the airdrop."
+    ),
+    csv: Optional[Path] = Option(
+        None,
+        "--csv",
+        "-c",
+        help="Specifies the input CSV file path.",
+        resolve_path=True,
+        file_okay=True
+    )
+):
+    # Pre-preflight stuff
+    console.clear()
+    rehydrate_terms_of_use()
+
+
+@cli.command(help="Runs airdrop calculations for given issuing address trustline holders.")
+def calculate(
     issuing_address: Optional[str] = Option(
         None,
         "--issuing-address",
@@ -44,17 +76,8 @@ def main(
         file_okay=True,
         dir_okay=False,
         writable=True
-    ),
-    version: Optional[bool] = Option(
-        None,
-        "--version",
-        "-v",
-        help="Show Airdrop's version and exit.",
-        callback=get_version,
-        is_eager=True
     )
-) -> None:
-
+):
     # Pre-preflight stuff
     console.clear()
     rehydrate_terms_of_use()
@@ -75,3 +98,17 @@ def main(
     step_fetch_trustline_balances()
     step_calculate_airdrop_yield()
     step_end_airdrop_calculations()
+
+
+@cli.callback()
+def main(
+    version: Optional[bool] = Option(
+        None,
+        "--version",
+        "-v",
+        help="Show Airdrop's version and exit.",
+        callback=get_version,
+        is_eager=True
+    )
+) -> None:
+    return

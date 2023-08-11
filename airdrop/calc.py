@@ -96,6 +96,12 @@ def calculate_airdrop_ratio() -> bool:
     if isinstance(AIRDROP_TOTAL_BUDGET, type(None)) or AIRDROP_TOTAL_BUDGET.is_zero():
         return False
 
+    if AIRDROP_TOTAL_SUM.is_zero() or AIRDROP_TOTAL_BUDGET.is_zero():
+
+        AIRDROP_RATIO = Decimal()
+
+        return True
+
     AIRDROP_RATIO = AIRDROP_TOTAL_BUDGET / AIRDROP_TOTAL_SUM
 
     return True

@@ -3,7 +3,8 @@
 
 from typer import run
 
-from airdrop.cli import main
+from airdrop.cli import cli
+from airdrop     import __app_name__
 
 if __name__ == "__main__":
-    run(main)
+    cli(prog_name=__app_name__)
