@@ -51,6 +51,17 @@ def get_layout_with_renderable(renderable) -> Layout:
     return layout
 
 
+def preflight_calculate_remaining_steps(*args) -> None:
+    """Calculates the steps required to complete preflight based on the arguments given.
+    """
+
+    global REQUIRED_PARAMS_MISSING
+
+    for argument in args:
+        if isinstance(argument, type(None)):
+            REQUIRED_PARAMS_MISSING += 1
+
+
 def preflight_check_cache() -> None:
     """Confirms with user if they want to use pre-existing cache or not."""
     delete_old_disk_caches()
@@ -108,7 +119,7 @@ def preflight_print_banner() -> None:
         raise Exit()
 
 
-def preflight_fetch_metadata(issuing_address, yielding_address, budget, csv) -> None:
+def preflight_fetch_metadata() -> None:
     """Firstly sets internal flags for required input variables, then fetches ALL token metadata from XRPLMeta.
 
     Args:
@@ -121,19 +132,7 @@ def preflight_fetch_metadata(issuing_address, yielding_address, budget, csv) -> 
         Exit: Whenever requests to XRPLMeta fail due to connection issues.
     """
 
-    global REQUIRED_PARAMS_MISSING, XRPL_METADATA
-
-    if isinstance(issuing_address, type(None)):
-        REQUIRED_PARAMS_MISSING += 1
-
-    if isinstance(yielding_address, type(None)):
-        REQUIRED_PARAMS_MISSING += 1
-
-    if isinstance(budget, type(None)):
-        REQUIRED_PARAMS_MISSING += 1
-
-    if isinstance(csv, type(None)):
-        REQUIRED_PARAMS_MISSING += 1
+    global XRPL_METADATA
 
     try:
         with console.status(i18n.preflight.metadata_fetch, spinner="dots") as status:
