@@ -68,7 +68,7 @@ def set_airdrop_budget(amount: Union[float, int]) -> bool:
 
 
 def increment_airdrop_sum(amount: Union[Decimal, list[Decimal]]) -> None:
-    """Increments the total airdrop sum, which is the total sum of all airdrop balances.
+    """Increments the total airdrop sum, which is the total sum of all trustline balances.
 
     Args:
         amount (Union[Decimal, list[Decimal]]): The amount which to increment with.
@@ -107,14 +107,14 @@ def calculate_airdrop_ratio() -> bool:
     return True
 
 
-def calculate_yield(balance: float) -> Union[float, None]:
+def calculate_yield(balance: Decimal) -> Union[float, None]:
     """Calculates the yield for any given anonymous balance.
 
     Args:
-        balance (float): The balance which to multiply.
+        balance (Decimal): The balance which to multiply.
 
     Returns:
-        Union[float, None]: `None` if the ratio hasn't been set, otherwise correct yield.
+        Union[Decimal, None]: `None` if the ratio hasn't been set, otherwise correct yield.
     """
 
     global AIRDROP_RATIO
