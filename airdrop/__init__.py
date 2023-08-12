@@ -7,7 +7,7 @@ from rich.console import Console
 from dataclasses  import dataclass
 from rich.theme   import Theme
 
-__app_version__ = "1.0.0+beta"
+__app_version__ = "1.0.0"
 __app_name__    = "airdrop"
 
 CONSOLE_THEME = Theme(

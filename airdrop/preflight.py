@@ -3,9 +3,6 @@
 
 from cache_to_disk import delete_disk_caches_for_function, delete_old_disk_caches
 from rich.prompt   import IntPrompt, Confirm, Prompt
-from rich.layout   import Layout
-from rich.align    import Align
-from rich.panel    import Panel
 from rich.text     import Text
 from typing        import Union
 from typer         import Exit
@@ -14,6 +11,7 @@ from os            import path
 from airdrop.cache import accept_terms_of_use, get_terms_of_use
 from airdrop.calc  import set_airdrop_budget, get_budget
 from airdrop.xrpl  import update_issuing_metadata, fetch_xrpl_metadata, update_yielding_token, get_yielding, get_issuer
+from airdrop.util  import get_layout_with_renderable
 from airdrop.csv   import set_output_path, is_path_valid, get_csv
 from airdrop       import console, i18n, t
 
@@ -24,31 +22,6 @@ XRPL_METADATA: dict[str, list[tuple[str, str]]] = { }
 REQUIRED_PARAMS_MISSING                         = 0
 
 REQUIRED_PARAMS_VISITED                         = 0
-
-def get_layout_with_renderable(renderable) -> Layout:
-
-    rendered_banner = Text.assemble(
-        ("__   ___   _ ______ _______            _         _                 \n", "#902EF4"),
-        ("\ \ / / \ | |  ____|__   __|     /\   (_)       | |                \n", "#1B6AFF"),
-        (" \ V /|  \| | |__     | |       /  \   _ _ __ __| |_ __ ___  _ __  \n", "#008EFF"),
-        ("  > < | . ` |  __|    | |      / /\ \ | | '__/ _` | '__/ _ \| '_ \ \n", "#00AAFF"),
-        (" / . \| |\  | |____   | |     / ____ \| | | | (_| | | | (_) | |_) |\n", "#00ACFF"),
-        ("/_/ \_\_| \_|______|  |_|    /_/    \_\_|_|  \__,_|_|  \___/| .__/ \n", "#00D5FF"),
-        ("                                                            | |    \n", "#00E7FD"),
-        ("                                                            |_|    \n", "#57F6F0"),
-
-        overflow="crop",
-        no_wrap=True
-    )
-
-    layout = Layout()
-
-    layout.split_column(
-        Layout(Align(Panel(rendered_banner, expand=False, subtitle=i18n.preflight.banner_subtitle, subtitle_align="left", border_style="#1B6AFF", padding=(0, 5)), "center", vertical="middle"), name="top"),
-        Layout(Align(renderable, vertical="bottom"), name="bottom")
-    )
-
-    return layout
 
 
 def preflight_calculate_remaining_steps(*args) -> None:

@@ -4,7 +4,6 @@
 from rich.progress import Progress
 from rich.padding  import Padding
 from rich.table    import Table
-from rich.panel    import Panel
 from rich.text     import Text
 from datetime      import timedelta
 from decimal       import Decimal
@@ -15,6 +14,7 @@ from time          import time
 from airdrop.thread import fetch_trustline_balances_threaded
 from airdrop.xrpl   import fetch_trustlines, get_yielding, get_client, get_issuer, populate_clients, dispose_clients
 from airdrop.calc   import calculate_airdrop_ratio, calculate_yield, increment_airdrop_sum, get_ratio, get_sum
+from airdrop.util   import get_layout_with_renderable
 from airdrop.csv    import generate_metadata, generate_csv, get_csv
 from airdrop        import console, i18n, t
 
@@ -254,31 +254,36 @@ def step_end_airdrop_calculations():
             console.print(t(i18n.steps.error_saving_csv, path=path))
             raise Exit()
 
-    # @NOTE(spunk-developer): Redo this WHOLE THING
 
-    results = Table(box=None, show_header=False, show_edge=False, padding=(1, 1))
+    results = Table(box=None, show_header=False, show_edge=False, padding=(0, 2, 0, 0))
 
     results.add_column(justify="left")
-    results.add_column(justify="center")
+    results.add_column(justify="left")
 
     results.add_row(
-        Text("Trustlines", "#902EF4"),
-        Text(f'{ len(FETCHED_TARGET_TRUSTLINES) }', "#902EF4")
+        Text("Filtered trustlines", "#902EF4"),
+        Text(f'{len(FETCHED_TARGET_TRUSTLINES):,}', "white")
     )
 
     results.add_row(
-        Text("Trustline sum", "#0098FF"),
-        Text(f'{ sum }', "#0098FF")
+        Text("Total elapsed time", "#0086FF"),
+        Text(str(timedelta(seconds=int(time() - AIRDROP_START_TIME))), "white")
     )
 
     results.add_row(
-        Text("Airdrop ratio", "#00CFFF"),
-        Text(f'{ ratio }', "#00CFFF")
+        Text("Fetched trustlines", "#00B6FF"),
+        Text(f'{len(FETCHED_TARGET_TRUSTLINES):,}', "white")
     )
 
     results.add_row(
-        Text("Total elapsed time", "#57F6F0"),
-        Text(str(timedelta(seconds=int(time() - AIRDROP_START_TIME))), "#57F6F0")
+        Text("Trustline sum", "#00DAFF"),
+        Text(f'{sum:,}', "white")
     )
 
-    console.print(Panel(results, padding=(1, 3), subtitle=i18n.steps.print_subtitle, subtitle_align="left", border_style="#1B6AFF"))
+    results.add_row(
+        Text("Airdrop ratio", "#57F6F0"),
+        Text(f'{ratio:,}', "white")
+    )
+
+    console.print(get_layout_with_renderable(Padding(results, (6, 6), expand=True)))
+    dispose_clients()
