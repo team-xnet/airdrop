@@ -73,6 +73,15 @@ def is_path_valid(pathname: str) -> bool:
 
 
 def generate_metadata(output_path: str, data: list[str]) -> bool:
+    """Generates a simple `txt` file containing `data`.
+
+    Args:
+        output_path (str): The path where to put the actual file.
+        data (list[str]): Data to print into the file. Each element in the list represents a new line.
+
+    Returns:
+        bool: `True` if file was written succesfully, `False` otherwise.
+    """
 
     if isinstance(output_path, type(None)):
         return
