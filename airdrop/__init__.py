@@ -85,7 +85,7 @@ class I18NSteps():
     error_trustline_fetch    = Template('[n]✗[/n] [[error]FAIL[/error]] Failed fetching trustlines for address [prominent]${address}[/prominent]! Please make sure you have an active internet connection, and that the issuing token in question has one or more trustlines set against it')
 
     # Balances fetch
-    balances_fetch         = Template('[[info]WORKING[/info]] Fetching ${token} balances for [prominent]${count}[/prominent] trustlines, this may take a while...')
+    balances_fetch         = Template('[[info]WORKING[/info]] Fetching [prominent]${token}[/prominent] balances for [prominent]${count}[/prominent] trustlines, this may take a while...')
     balances_fetch_account = Template('[[info]WORKING[/info]] Fetching [prominent]${token}[/prominent] balance for trustline address [prominent]${address}[/prominent]...')
     balances_fetch_success = Template('[y]✓[/y] [[success]SUCCESS[/success]] Successfully fetched [prominent]${token}[/prominent] balances for [prominent]${count}[/prominent] trustlines in [prominent]${delta}[/prominent]')
     error_balances         = Template('[[info]WORKING[/info]] Failed fetching balance for trustline [prominent]${address}[/prominent] due to rate limiting, waiting for [prominent]${delta}[/prominent] seconds before trying again...')
