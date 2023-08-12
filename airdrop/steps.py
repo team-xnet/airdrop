@@ -15,7 +15,7 @@ from time          import time
 from airdrop.thread import fetch_trustline_balances_threaded
 from airdrop.xrpl   import fetch_trustlines, get_yielding, get_client, get_issuer, populate_clients, dispose_clients
 from airdrop.calc   import calculate_airdrop_ratio, calculate_yield, increment_airdrop_sum, get_ratio, get_sum
-from airdrop.csv    import generate_csv, get_csv
+from airdrop.csv    import generate_metadata, generate_csv, get_csv
 from airdrop        import console, i18n, t
 
 AIRDROP_START_TIME:         Union[None, float] = None
@@ -242,7 +242,15 @@ def step_end_airdrop_calculations():
                     }
                 )
 
-        if not generate_csv(path, headers, data):
+        metadata = [
+            f'Filtered trustlines: { len(FETCHED_TARGET_TRUSTLINES) - len(FETCHED_TRUSTLINE_BALANCES) }',
+            f'Total elapsed time:  { timedelta(seconds=int(time() - AIRDROP_START_TIME)) }',
+            f'Fetched trustlines:  { len(FETCHED_TARGET_TRUSTLINES) }',
+            f'Trustline sum:       { sum }',
+            f'Airdrop ratio:       { ratio }'
+        ]
+
+        if not generate_csv(path, headers, data) or not generate_metadata(path, metadata):
             console.print(t(i18n.steps.error_saving_csv, path=path))
             raise Exit()
 

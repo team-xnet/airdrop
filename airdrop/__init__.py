@@ -66,7 +66,7 @@ class I18NPreflight():
     error_empty_path = Template('Path "${path}" is not valid. Please make sure it follows the path specification of your operating system, and that it is not empty!')
 
     # Confirm options
-    confirm_preflight = Template('\n - Issued token: ${issuing}\n - Yield token: ${yielding}\n - Total budget: ${budget}\n - Output CSV path: ${csv}\n\nIs this OK?')
+    confirm_preflight = Template('\n - Issued token: ${issuing}\n - Yield token: ${yielding}\n - Total budget: ${budget}\n - Output CSV & metadata files path: ${csv}\n\nIs this OK?')
 
 @dataclass(frozen=True)
 class I18NSteps():
@@ -91,7 +91,7 @@ class I18NSteps():
     error_balances         = Template('[[info]WORKING[/info]] Failed fetching balance for trustline [prominent]${address}[/prominent] due to rate limiting, waiting for [prominent]${delta}[/prominent] seconds before trying again...')
 
     # Print yield
-    error_saving_csv = Template('[n]✗[/n] [[error]FAIL[/error]] Could not save output CSV file to path "${}". Please make sure you have correct permissions to write to this location and try again')
+    error_saving_csv = Template('[n]✗[/n] [[error]FAIL[/error]] Could not save output CSV or metadata file(s) to path [prominent]${path}[/prominent]. Please make sure you have correct permissions to write to this location and try again')
     print_subtitle   = "Finished airdrop calculations!"
     print_header     = "Total airdrop yield"
 
