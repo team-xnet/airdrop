@@ -9,12 +9,17 @@ from xrpl.clients                       import WebsocketClient
 from requests                           import get
 from decimal                            import Decimal
 from typing                             import Union
+from threading import Lock
 
 from airdrop import console
+
+CLIENT_LOCK:        Lock                                      = Lock()
 
 SELECTED_TRUSTLINE: Union[None, tuple[str, str]]              = None
 
 YIELDING_TOKEN:     Union[None, tuple[str, Union[None, str]]] = None
+
+XRPL_CLIENTS:       list[WebsocketClient]                     = [ ]
 
 XRPL_CLIENT:        Union[None, WebsocketClient]              = None
 
@@ -79,6 +84,116 @@ def update_yielding_token(currency: str, name: Union[None, str]) -> bool:
     YIELDING_TOKEN = (currency, name)
 
     return True
+
+
+def populate_clients() -> bool:
+    """Populates available clients.
+
+    Returns:
+        bool: If creating WebSocket clients was successful.
+    """
+
+    global XRPL_CLIENTS
+
+    addresses = [
+        "wss://xrplcluster.com/",
+        "wss://s1.ripple.com/",
+        "wss://s2.ripple.com/"
+    ]
+
+    for address in addresses:
+
+        try:
+            client = WebsocketClient(address)
+
+            if not client.is_open():
+                client.open()
+
+            XRPL_CLIENTS.append(client)
+
+        except:
+            continue
+
+    return len(XRPL_CLIENTS) >= 1
+
+
+def get_available_client() -> Union[WebsocketClient, None]:
+    """Thread-safe client getter.
+
+    Returns:
+        Union[WebsocketClient, None]: A free client or None if all clients are in use.
+    """
+
+    global XRPL_CLIENTS, CLIENT_LOCK
+
+    CLIENT_LOCK.acquire()
+
+    try:
+        if len(XRPL_CLIENTS) <= 0:
+            raise Exception
+
+        client = XRPL_CLIENTS.pop()
+
+        if not client.is_open():
+            client.open()
+
+        return client
+
+    except:
+        return None
+
+    finally:
+        CLIENT_LOCK.release()
+
+
+def return_client(client: WebsocketClient) -> None:
+    """Returns a given `client` to the available client pool.
+
+    Args:
+        client (WebsocketClient): Client which to return.
+    """
+
+    global XRPL_CLIENTS, CLIENT_LOCK
+
+    CLIENT_LOCK.acquire()
+
+    try:
+        if client not in XRPL_CLIENTS:
+            XRPL_CLIENTS.append(client)
+
+    except:
+        pass
+
+    finally:
+        CLIENT_LOCK.release()
+
+
+def dispose_clients() -> bool:
+    """Disposes and deletes previously defined clients.
+
+    Returns:
+        bool: `False` if disposing was a success, `False` otherwise.
+    """
+
+    global XRPL_CLIENTS
+
+    try:
+        for _ in range(len(XRPL_CLIENTS)):
+
+            if len(XRPL_CLIENTS) <= 0:
+                break
+
+            client = XRPL_CLIENTS.pop()
+
+            if client.is_open():
+                client.close()
+
+            del client
+
+        return True
+
+    except:
+        return False
 
 
 def get_client() -> WebsocketClient:
@@ -174,7 +289,7 @@ def fetch_trustlines(address: str, token_id: str, client: WebsocketClient) -> li
     if not response.is_successful() or not response.is_valid():
         raise AssertionError
 
-    results: list[str] = []
+    results: list[str] = [ ]
 
     while True:
         for trustline in response.result["lines"]:

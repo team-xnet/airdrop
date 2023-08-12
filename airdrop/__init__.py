@@ -16,7 +16,9 @@ CONSOLE_THEME = Theme(
         "success":   "bright_green bold",
         "error":     "bright_red bold",
         "info":      "bright_blue bold",
-        "warn":      "bright_magenta bold"
+        "warn":      "bright_magenta bold",
+        "y":         "green",
+        "n":         "red"
     }
 )
 
@@ -35,27 +37,27 @@ class I18NPreflight():
 
     # Metadata fetch
     metadata_fetch     = "[[info]WORKING[/info]] Fetching prequisite metadata..."
-    error_fetch_failed = "[[error]FAIL[/error]] Failed fetching prequisite metadata. Make sure you have an active internet connection, and that XRPLMeta services are available."
+    error_fetch_failed = "[n]✗[/n] [[error]FAIL[/error]] Failed fetching prequisite metadata. Make sure you have an active internet connection, and that XRPLMeta services are available."
 
     # Input yielding address
     enter_yielding           = Template('[prominent](${step}/${maximum})[/prominent] Enter yield token issuing address or "XRP" for XRP yield: ')
     error_yielding_invalid   = Template('Issuing address "${address}" isn\'t a known token issuing address. Please make sure you have entered the address correctly or input "XRP" for XRP yield and try again: ')
-    error_yielding_missing   = Template('[[error]FAIL[/error]] Yielding address "${address}" isn\'t a known token issuing address. Please make sure you have entered the address correctly, and that one or more tokens issued by this address has a trust level of 1 or greater on the XRPL. If the intent was to use XRP as the yielding token, simply enter "XRP" as the yielding token parameter')
-    error_yielding_overwrite = Template('[[error]FAIL[/error]] Yielding issuing address "${address}" cannot be set, as overwriting the yielding issuing address is forbidden')
+    error_yielding_missing   = Template('[n]✗[/n] [[error]FAIL[/error]] Yielding address "${address}" isn\'t a known token issuing address. Please make sure you have entered the address correctly, and that one or more tokens issued by this address has a trust level of 1 or greater on the XRPL. If the intent was to use XRP as the yielding token, simply enter "XRP" as the yielding token parameter')
+    error_yielding_overwrite = Template('[n]✗[/n] [[error]FAIL[/error]] Yielding issuing address "${address}" cannot be set, as overwriting the yielding issuing address is forbidden')
 
     # Input issuing address
     choose_token           = Template('We detected [prominent]${total}[/prominent] tokens issued by address [prominent]${address}[/prominent]:\n\n${tokens}\n\nPlease enter the number of one from the list above')
     enter_issuer           = Template('[prominent](${step}/${maximum})[/prominent] Enter source token issuing address: ')
     error_issuer_invalid   = Template('Issuing address "${address}" isn\'t a known token issuing address. Please make sure you have entered the address correctly and try again: ')
-    error_issuer_missing   = Template('[[error]FAIL[/error]] Issuing address "${address}" isn\'t a known token issuing address. Please make sure you have entered the address correctly, and that one or more tokens issued by this address has a trust level of 1 or greater on the XRPL')
-    error_issuer_overwrite = Template('[[error]FAIL[/error]] Source issuing address "${address}" cannot be set, as overwriting the source issuing address is forbidden')
+    error_issuer_missing   = Template('[n]✗[/n] [[error]FAIL[/error]] Issuing address "${address}" isn\'t a known token issuing address. Please make sure you have entered the address correctly, and that one or more tokens issued by this address has a trust level of 1 or greater on the XRPL')
+    error_issuer_overwrite = Template('[n]✗[/n] [[error]FAIL[/error]] Source issuing address "${address}" cannot be set, as overwriting the source issuing address is forbidden')
 
     # Input budget validation
     enter_balance    = Template('[prominent](${step}/${maximum})[/prominent] Enter the total airdrop budget')
-    error_conversion = Template('[[error]FAIL[/error]] Could not converty input "${value}" into a number')
-    error_overwrite  = "[[error]FAIL[/error]] Cannot overwrite supply budget, as it has already been defined"
-    error_minimum    = Template('[[error]FAIL[/error]] Input "${value}" must be larger than 0')
-    error_maximum    = Template('[[error]FAIL[/error]] Input "${value}" cannot be larger than maximum allowed integer 100000000000000000')
+    error_conversion = Template('[n]✗[/n] [[error]FAIL[/error]] Could not converty input "${value}" into a number')
+    error_overwrite  = "[n]✗[/n] [[error]FAIL[/error]] Cannot overwrite supply budget, as it has already been defined"
+    error_minimum    = Template('[n]✗[/n] [[error]FAIL[/error]] Input "${value}" must be larger than 0')
+    error_maximum    = Template('[n]✗[/n] [[error]FAIL[/error]] Input "${value}" cannot be larger than maximum allowed integer 100000000000000000')
 
     # Output CSV file
     confirm_csv      = Template('[prominent](${step}/${maximum})[/prominent] Once the airdrop has finished calculating, would you like to save the results into a CSV file? If not, the result of the calculations is printed into console as a table')
@@ -69,6 +71,9 @@ class I18NPreflight():
 @dataclass(frozen=True)
 class I18NSteps():
 
+    # Setup
+    error_clients = "[n]✗[/n] [[error]FAIL[/error]] Could not connect to any XRPL public API. This could be due to rate limiting, or due to the lack of a stable internet connection"
+
     # Yield calculation
     yield_sum            = "[[info]WORKING[/info]] Summing up the total balance for all trustlines..."
     yield_result         = "[[info]WORKING[/info]] Calculating total yield for all trustlines..."
@@ -76,17 +81,17 @@ class I18NSteps():
 
     # Trustline fetch
     trustlines_fetch         = Template('[[info]WORKING[/info]] Fetching trustlines for address [prominent]${address}[/prominent]...')
-    trustlines_fetch_success = Template('[[success]SUCCESS[/success]] Successfully fetched [prominent]${count}[/prominent] trustlines set for issuing address [prominent]${address}[/prominent] in [prominent]${delta}[/prominent]')
-    error_trustline_fetch    = Template('[[error]FAIL[/error]] Failed fetching trustlines for address [prominent]${address}[/prominent]! Please make sure you have an active internet connection, and that the issuing token in question has one or more trustlines set against it')
+    trustlines_fetch_success = Template('[y]✓[/y] [[success]SUCCESS[/success]] Successfully fetched [prominent]${count}[/prominent] trustlines set for issuing address [prominent]${address}[/prominent] in [prominent]${delta}[/prominent]')
+    error_trustline_fetch    = Template('[n]✗[/n] [[error]FAIL[/error]] Failed fetching trustlines for address [prominent]${address}[/prominent]! Please make sure you have an active internet connection, and that the issuing token in question has one or more trustlines set against it')
 
     # Balances fetch
-    balances_fetch         = "[[info]WORKING[/info]] Fetching trustline balances..."
+    balances_fetch         = Template('[[info]WORKING[/info]] Fetching ${token} balances for [prominent]${count}[/prominent] trustlines, this may take a while...')
     balances_fetch_account = Template('[[info]WORKING[/info]] Fetching [prominent]${token}[/prominent] balance for trustline address [prominent]${address}[/prominent]...')
-    balances_fetch_success = Template('[[success]SUCCESS[/success]] Successfully fetched balances for [prominent]${count}[/prominent] trustlines in [prominent]${delta}[/prominent]')
+    balances_fetch_success = Template('[y]✓[/y] [[success]SUCCESS[/success]] Successfully fetched [prominent]${token}[/prominent] balances for [prominent]${count}[/prominent] trustlines in [prominent]${delta}[/prominent]')
     error_balances         = Template('[[info]WORKING[/info]] Failed fetching balance for trustline [prominent]${address}[/prominent] due to rate limiting, waiting for [prominent]${delta}[/prominent] seconds before trying again...')
 
     # Print yield
-    error_saving_csv = Template('[[error]FAIL[/error]] Could not save output CSV file to path "${}". Please make sure you have correct permissions to write to this location and try again')
+    error_saving_csv = Template('[n]✗[/n] [[error]FAIL[/error]] Could not save output CSV file to path "${}". Please make sure you have correct permissions to write to this location and try again')
     print_subtitle   = "Finished airdrop calculations!"
     print_header     = "Total airdrop yield"
 
