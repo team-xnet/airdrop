@@ -386,20 +386,11 @@ def preflight_validate_output(output_path) -> None:
         if not is_path_valid(output_path):
             raise RuntimeError()
 
+        set_output_path(output_path)
+
     except:
         console.print(t(i18n.preflight.error_empty_path, path=output_path))
         raise Exit()
-
-    if output_path.endswith(path.sep):
-        set_output_path(f'{ output_path }airdrop.csv')
-        return
-
-    else:
-        if output_path.endswith(".csv"):
-            set_output_path(output_path)
-            return
-
-        set_output_path(f'{ output_path }/airdrop.csv')
 
 
 def preflight_confirm():

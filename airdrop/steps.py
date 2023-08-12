@@ -10,12 +10,13 @@ from datetime      import timedelta
 from decimal       import Decimal
 from typing        import Union
 from typer         import Exit
-from time          import sleep, time
+from time          import time
 
-from airdrop.xrpl import fetch_account_balance, fetch_trustlines, get_yielding, get_client, get_issuer
-from airdrop.calc import calculate_airdrop_ratio, calculate_yield, increment_airdrop_sum, get_ratio, get_sum
-from airdrop.csv  import generate_csv, get_csv
-from airdrop      import console, i18n, t
+from airdrop.thread import fetch_trustline_balances_threaded
+from airdrop.xrpl   import fetch_trustlines, get_yielding, get_client, get_issuer, populate_clients, dispose_clients
+from airdrop.calc   import calculate_airdrop_ratio, calculate_yield, increment_airdrop_sum, get_ratio, get_sum
+from airdrop.csv    import generate_metadata, generate_csv, get_csv
+from airdrop        import console, i18n, t
 
 AIRDROP_START_TIME:         Union[None, float] = None
 
@@ -48,6 +49,10 @@ def step_begin_airdrop_calculations():
 
     console.print(Padding(start_marker, (1, 2)))
 
+    if not populate_clients():
+        console.print(i18n.steps.error_clients)
+        raise Exit()
+
 
 def step_fetch_issuer_trustlines():
     """Begins the initial part of the airdrop process - Fetching the trustlines set against a given token.
@@ -77,7 +82,6 @@ def step_fetch_issuer_trustlines():
                 console.print(t(i18n.steps.error_trustline_fetch, address=address))
                 raise Exit()
 
-    # @NOTE(spunk-developer): Add checkmark to the start of the message
     console.print(t(i18n.steps.trustlines_fetch_success, count=len(FETCHED_TARGET_TRUSTLINES), address=address, delta=timedelta(seconds=int(time() - start_time))))
 
 
@@ -100,64 +104,13 @@ def step_fetch_trustline_balances():
 
     start_time = time()
 
-    with console.status(i18n.steps.balances_fetch, spinner="dots") as status:
-
-        trustlines = FETCHED_TARGET_TRUSTLINES.copy()
+    with console.status(t(i18n.steps.balances_fetch, token=name, count=len(FETCHED_TARGET_TRUSTLINES)), spinner="dots") as status:
 
         status.start()
-
-        trustline  = trustlines.pop()
-        client     = get_client()
-        fail_timer = None
-
-        while True:
-            try:
-                if not client.is_open():
-                    client.open()
-
-                if trustline in FETCHED_TRUSTLINE_BALANCES:
-                    trustline = trustlines.pop()
-                    continue
-
-                if isinstance(fail_timer, type(None)):
-                    status.update(t(i18n.steps.balances_fetch_account, address=trustline, token=name))
-
-                balance = fetch_account_balance(trustline, token, client)
-
-                if isinstance(balance, type(None)) or balance.is_zero():
-                    continue
-
-                if not isinstance(fail_timer, type(None)):
-                    fail_timer = None
-
-                FETCHED_TRUSTLINE_BALANCES[trustline] = balance
-
-                if len(trustlines) == 0:
-                    break
-
-                trustline = trustlines.pop()
-
-            except:
-
-                if isinstance(fail_timer, type(None)):
-                    fail_timer = 10
-
-                else:
-
-                    if fail_timer < 300:
-                        fail_timer = fail_timer * 2
-
-                    else:
-                        fail_timer = 300
-
-                    for delta in reversed(range(fail_timer)):
-                        status.update(t(i18n.steps.error_balances, address=trustline, delta=delta))
-
-                        sleep(1)
-
+        FETCHED_TRUSTLINE_BALANCES = fetch_trustline_balances_threaded(token, FETCHED_TARGET_TRUSTLINES)
         status.stop()
-        console.print(t(i18n.steps.balances_fetch_success, count=len(FETCHED_TRUSTLINE_BALANCES), delta=timedelta(seconds=int(time() - start_time))))
 
+    console.print(t(i18n.steps.balances_fetch_success, token=name, count=len(FETCHED_TRUSTLINE_BALANCES), delta=timedelta(seconds=int(time() - start_time))))
 
 
 def step_calculate_airdrop_yield():
@@ -211,6 +164,7 @@ def step_end_airdrop_calculations():
     global FETCHED_TRUSTLINE_BALANCES, INDIVIDUAL_TRUSTILE_YIELD, FETCHED_TARGET_TRUSTLINES, AIRDROP_START_TIME
 
     console.clear()
+    dispose_clients()
 
     yielding_metadata = get_yielding()
     ratio             = get_ratio()
@@ -288,7 +242,15 @@ def step_end_airdrop_calculations():
                     }
                 )
 
-        if not generate_csv(path, headers, data):
+        metadata = [
+            f'Filtered trustlines: { len(FETCHED_TARGET_TRUSTLINES) - len(FETCHED_TRUSTLINE_BALANCES) }',
+            f'Total elapsed time:  { timedelta(seconds=int(time() - AIRDROP_START_TIME)) }',
+            f'Fetched trustlines:  { len(FETCHED_TARGET_TRUSTLINES) }',
+            f'Trustline sum:       { sum }',
+            f'Airdrop ratio:       { ratio }'
+        ]
+
+        if not generate_csv(path, headers, data) or not generate_metadata(path, metadata):
             console.print(t(i18n.steps.error_saving_csv, path=path))
             raise Exit()
 

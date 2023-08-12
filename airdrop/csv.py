@@ -22,9 +22,6 @@ def set_output_path(path: str) -> bool:
 
     global CSV_OUTPUT_PATH
 
-    if not path.endswith(".csv"):
-        path = f'{ path }.csv'
-
     if not isinstance(CSV_OUTPUT_PATH, type(None)):
         return False
 
@@ -75,7 +72,39 @@ def is_path_valid(pathname: str) -> bool:
         return True
 
 
-def generate_csv(path: str, headers: list[str], data: list[dict]) -> bool:
+def generate_metadata(output_path: str, data: list[str]) -> bool:
+    """Generates a simple `txt` file containing `data`.
+
+    Args:
+        output_path (str): The path where to put the actual file.
+        data (list[str]): Data to print into the file. Each element in the list represents a new line.
+
+    Returns:
+        bool: `True` if file was written succesfully, `False` otherwise.
+    """
+
+    if isinstance(output_path, type(None)):
+        return
+
+    if output_path.endswith(path.sep):
+        output_path = f'{ path }airdrop_metadata.txt'
+
+    elif not  output_path.endswith(".txt"):
+        output_path = f'{ output_path + path.sep }airdrop_metadata.txt'
+
+    try:
+        with open(Path(output_path).resolve(), "w", encoding="UTF8", newline="") as file:
+
+            for line in data:
+                file.write(f'{ line }\n')
+
+            return True
+
+    except:
+        return False
+
+
+def generate_csv(output_path: str, headers: list[str], data: list[dict]) -> bool:
     """Generates and writes given `data` dictionary into `path`.
 
     Args:
@@ -87,13 +116,17 @@ def generate_csv(path: str, headers: list[str], data: list[dict]) -> bool:
         bool: `True` if the file was written successfully, `False` otherwise.
     """
 
-    csv_path = get_csv()
-
-    if isinstance(csv_path, type(None)):
+    if isinstance(output_path, type(None)):
         return
 
+    if output_path.endswith(path.sep):
+        output_path = f'{ path }airdrop_data.csv'
+
+    elif not  output_path.endswith(".csv"):
+        output_path = f'{ output_path + path.sep }airdrop_data.csv'
+
     try:
-        with open(Path(path).resolve(), "w", encoding="UTF8", newline="") as file:
+        with open(Path(output_path).resolve(), "w", encoding="UTF8", newline="") as file:
 
             writer = DictWriter(file, fieldnames=headers)
 
