@@ -48,6 +48,7 @@ def distribute(
 
     # Preflight stuff
     preflight_calculate_remaining_steps(budget, ratio, csv)
+    preflight_print_banner()
 
 
 @cli.command(help="Runs airdrop calculations for given issuing address trustline holders.")

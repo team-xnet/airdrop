@@ -32,7 +32,7 @@ class I18NPreflight():
     # Rendered banner title
     banner_subtitle    = "Made using XRP, Python, and a LOT of coffee by XNET."
     banner_description = "Thank you for using XNET Airdrop! Airdrop is a small utility program built to make the most tedious aspect of initial token distribution (Commonly known as airdropping) easier — The calculation aspect of it. Airdrop will automatically fetch all trustlines set against the desired currency so it can then calculate the total yield per trustline token, which is then finally filtered and organized into a table for you to use as the total distribution table for the distribution itself.\n\n"
-    banner_note        = "Airdrop does NOT require or send any token of any kind. It is just an utility that does the required math for you, and formats the resulting data into an easy-to-use format.\n\n"
+    banner_note        = "Airdro CAN OPTIONALLY send tokens if the user chooses to, however this is NOT required. Distributing tokens based on the generated output data is a separate function of the program.\n\n"
     banner_disclaimer  = "DISCLAIMER: We (XNET and all XNET affiliated entities) are not responsible for any loss of funds, or any damages of any kind that result in the use of this program. We also ask all users to double check all generated output for validity and correctness. We do not guarantee the resulting data of any kind being factually correct.\n"
 
     # Metadata fetch
