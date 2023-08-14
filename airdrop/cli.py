@@ -50,6 +50,9 @@ def distribute(
     preflight_calculate_remaining_steps(budget, ratio, csv)
     preflight_print_banner()
 
+    console.print("Distribution is not supported in the current version.")
+    raise Exit()
+
 
 @cli.command(help="Runs airdrop calculations for given issuing address trustline holders.")
 def calculate(
