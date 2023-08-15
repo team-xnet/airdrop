@@ -68,6 +68,12 @@ class I18NPreflight():
     # Confirm options
     confirm_preflight = Template('\n - Issued token: ${issuing}\n - Yield token: ${yielding}\n - Total budget: ${budget}\n - Output CSV & metadata files path: ${csv}\n\nIs this OK?')
 
+    # Input data path
+    choose_data        = Template('[prominent](${step}/${maximum})[/prominent] Where are the input data files located?\n\n1. Desktop\n2. Documents\n3. Custom...\n\nEnter choice')
+    enter_data         = 'Enter the path that includes both meta and data files: '
+    error_data_invalid = Template('Path "${datapath}" doesn\'t include either the data or the meta file(s). Please make sure you have entered the path correctly, that you have the required permissions to read files within the given path and try again: ')
+    error_filepaths    = Template('[n]✗[/n] [[error]FAIL[/error]] Couldn\'t locate [prominent]${filetype}[/prominent] at [prominent]${filepath}[/prominent]. Please make sure the file exists, that you have the required permissions to read the file and that the name hasn\'t been altered.')
+
 @dataclass(frozen=True)
 class I18NSteps():
 

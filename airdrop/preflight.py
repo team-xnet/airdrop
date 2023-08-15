@@ -4,12 +4,14 @@
 from cache_to_disk import delete_disk_caches_for_function, delete_old_disk_caches
 from rich.prompt   import IntPrompt, Confirm, Prompt
 from rich.text     import Text
+from pathlib       import Path
 from typing        import Union
 from typer         import Exit
 from os            import path
 
 from airdrop.cache import accept_terms_of_use, get_terms_of_use
 from airdrop.calc  import set_airdrop_budget, get_budget
+from airdrop.data  import set_data, set_meta
 from airdrop.xrpl  import update_issuing_metadata, fetch_xrpl_metadata, update_yielding_token, get_yielding, get_issuer
 from airdrop.util  import get_layout_with_renderable
 from airdrop.csv   import set_output_path, is_path_valid, get_csv
@@ -36,7 +38,9 @@ def preflight_calculate_remaining_steps(*args) -> None:
 
 
 def preflight_check_cache() -> None:
-    """Confirms with user if they want to use pre-existing cache or not."""
+    """Confirms with user if they want to use pre-existing cache or not.
+    """
+
     delete_old_disk_caches()
 
     if not isinstance(fetch_xrpl_metadata.cache_size(), type(None)):
@@ -338,10 +342,10 @@ def preflight_validate_output(output_path) -> None:
         choice = int(IntPrompt.ask(i18n.preflight.choose_path, choices=[ "1", "2", "3" ]))
 
         if choice == 1:
-            output_path = path.expanduser("~/Desktop")
+            output_path = path.expanduser(f'~{ path.sep }Desktop')
 
         elif choice == 2:
-            output_path = path.expanduser("~/Documents")
+            output_path = path.expanduser(f'~{ path.sep }Documents')
 
         elif choice == 3:
             user_path = Prompt.ask(i18n.preflight.custom_path, default="", show_default=False)
@@ -353,7 +357,7 @@ def preflight_validate_output(output_path) -> None:
         if output_path.startswith("~"):
             output_path = path.expanduser(output_path)
 
-        output_path = path.normpath(path.abspath(output_path))
+        output_path = path.abspath(path.normpath(output_path))
 
         # We kill the whole thing if the path can't be validated.
         if not is_path_valid(output_path):
@@ -407,3 +411,57 @@ def preflight_confirm():
         raise Exit()
     else:
         console.clear()
+
+
+def preflight_validate_data_path(input_path: Union[Path, None]) -> None:
+    """Validates and sets the required datafile paths.
+
+    Args:
+        input_path (Union[Path, None]): The actual path itself.
+
+    Raises:
+        Exit: If either the meta or data file(s) don't exist.
+    """
+
+    global REQUIRED_PARAMS_VISITED, REQUIRED_PARAMS_MISSING
+
+    if isinstance(input_path, type(None)):
+
+        REQUIRED_PARAMS_VISITED += 1
+
+        choice = int(IntPrompt.ask(t(i18n.preflight.choose_data, step=REQUIRED_PARAMS_VISITED, maximum=REQUIRED_PARAMS_MISSING), choices=[ "1", "2", "3" ]))
+
+        if choice == 1:
+            input_path = path.expanduser(f'~{ path.sep }Desktop')
+
+        elif choice == 2:
+            input_path = path.expanduser(f'~{ path.sep }Documents')
+
+        elif choice == 3:
+            while True:
+                user_path = console.input(i18n.preflight.enter_data)
+
+                if type(user_path) is str and len(user_path) >= 1:
+
+                    if user_path.startswith('~'):
+                        user_path = path.expanduser(user_path)
+
+                    input_path = path.abspath(path.normpath(user_path))
+
+                    break
+
+                input_path = console.input(t(i18n.preflight.error_data_invalid, datapath=user_path))
+
+
+    meta = Path(input_path, "airdrop_metadata.txt")
+    data = Path(input_path, "airdrop_data.csv")
+
+    if not set_data(data):
+        console.print(t(i18n.preflight.error_filepaths, filetype="airdrop_data.csv", filepath=data.absolute()))
+        raise Exit()
+
+    if not set_meta(meta):
+        console.print(t(i18n.preflight.error_filepaths, filetype="airdrop_metadata.txt", filepath=meta.absolute()))
+        raise Exit()
+
+    console.clear()

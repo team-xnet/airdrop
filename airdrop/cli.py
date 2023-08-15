@@ -1,11 +1,11 @@
 """CLI functionality for our Airdrop utility.          """
 """Author: spunk-developer <xspunk.developer@gmail.com>"""
 
-from pathlib       import Path
-from typing        import Optional
-from typer         import Option, Typer, Exit
+from pathlib import Path
+from typing  import Optional
+from typer   import Option, Typer, Exit
 
-from airdrop.preflight import preflight_validate_yielding_address, preflight_calculate_remaining_steps, preflight_validate_issuing_address, preflight_validate_supply_balance, preflight_fetch_metadata, preflight_validate_output, preflight_print_banner, preflight_check_cache, preflight_confirm
+from airdrop.preflight import preflight_validate_yielding_address, preflight_calculate_remaining_steps, preflight_validate_issuing_address, preflight_validate_supply_balance, preflight_validate_data_path, preflight_fetch_metadata, preflight_validate_output, preflight_print_banner, preflight_check_cache, preflight_confirm
 from airdrop.steps     import step_begin_airdrop_calculations, step_fetch_trustline_balances, step_calculate_airdrop_yield, step_end_airdrop_calculations, step_fetch_issuer_trustlines
 from airdrop.cache     import rehydrate_terms_of_use
 from airdrop           import __app_version__, __app_name__, console
@@ -27,17 +27,11 @@ def distribute(
         "-b",
         help="Specifies the total airdrop supply budget that was used previously."
     ),
-    ratio: Optional[float] = Option(
+    data: Optional[Path] = Option(
         None,
-        "--ratio",
-        "-r",
-        help="Final calculated ratio for the airdrop."
-    ),
-    csv: Optional[Path] = Option(
-        None,
-        "--csv",
-        "-c",
-        help="Specifies the input CSV file path.",
+        "--data",
+        "-d",
+        help="Specifies the input data & meta files path.",
         resolve_path=True,
         file_okay=True
     )
@@ -47,11 +41,10 @@ def distribute(
     rehydrate_terms_of_use()
 
     # Preflight stuff
-    preflight_calculate_remaining_steps(budget, ratio, csv)
+    preflight_calculate_remaining_steps(budget, data)
     preflight_print_banner()
-
-    console.print("Distribution is not supported in the current version.")
-    raise Exit()
+    preflight_validate_supply_balance(budget)
+    preflight_validate_data_path(data)
 
 
 @cli.command(help="Runs airdrop calculations for given issuing address trustline holders.")
