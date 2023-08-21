@@ -10,6 +10,7 @@ from os      import environ, lstat, path
 
 CSV_OUTPUT_PATH: Union[None, str] = None
 
+
 def set_output_path(path: str) -> bool:
     """Sets the CSV file output path to given input.
 

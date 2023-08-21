@@ -2,11 +2,18 @@
 """Author: spunk-developer <xspunk.developer@gmail.com>"""
 
 from pathlib import Path
+from decimal import Decimal
 from typing  import Union
+from enum    import Enum
+from csv     import reader
 
-DATA_FILE_PATH: Union[None, Path] = None
+DATA_FILE_CONTENTS: Union[None, list[str]] = None
 
-META_FILE_PATH: Union[None, Path] = None
+META_FILE_CONTENTS: dict[str, Decimal]     = None
+
+DATA_FILE_PATH: Union[None, Path]          = None
+
+META_FILE_PATH: Union[None, Path]          = None
 
 
 def set_data(data: Path) -> bool:
@@ -69,3 +76,160 @@ def get_meta() -> Union[None, Path]:
 
     global META_FILE_PATH
     return META_FILE_PATH
+
+
+def validate_metadata() -> bool:
+    """Validates generated metadata file's contents while also parsing them.
+
+    Returns:
+        bool: `True` if all required lines are present and got parsed successfully, `False` otherwise.
+    """
+
+    global META_FILE_CONTENTS, META_FILE_PATH
+
+    meta_file: Union[None, list[str]] = None
+    data:      dict[str, Decimal]     = { }
+
+    item_keys: list[str] = [
+        "Filtered trustlines",
+        "Fetched trustlines",
+        "Trustline sum",
+        "Airdrop ratio"
+    ]
+
+    try:
+        with open(META_FILE_PATH) as file:
+
+            meta_file = file.read().splitlines()
+
+            if len(meta_file) <= 0:
+                return False
+
+        # We filter out the elapsed time due to it being cosmetic only
+        meta_file       = list(filter(lambda item: "Total elapsed time" not in item, meta_file))
+        validated_keys = item_keys.copy()
+
+        for line in meta_file:
+
+            if len(validated_keys) <= 0:
+                return False
+
+            for key in validated_keys:
+
+                if key in line:
+                    validated_keys.remove(key)
+                    break
+
+                if meta_file.index(line) == len(meta_file) - 1 and meta_file.index(key) == len(validated_keys) - 1:
+                    return False
+
+        if len(validated_keys) >= 1:
+            return False
+
+        for line in meta_file:
+
+            idx = item_keys[meta_file.index(line)]
+
+            # Sequential string cleanup
+            line = line.replace(idx, '')
+            line = line.replace(':', '')
+            line = line.strip()
+
+            line = Decimal(line)
+            key  = None
+
+            if idx == "Filtered trustlines":
+                key = "filtered"
+
+            elif idx == "Fetched trustlines":
+                key = "fetched"
+
+            elif idx == "Airdrop ratio":
+                key = "ratio"
+
+            elif idx == "Trustline sum":
+                key = "sum"
+
+            if key in data:
+                continue
+
+            data[key] = line
+
+        META_FILE_CONTENTS = data
+
+        return True
+
+    except:
+        return False
+
+
+def validate_data() -> bool:
+    """Validates and categorizes the actual airdrop data.
+
+    Returns:
+        bool: `True` if the data has been validated and parsed correctly, `False` otherwise.
+    """
+
+    global DATA_FILE_CONTENTS, DATA_FILE_PATH
+
+    data_file: Union[None, list[str]] = None
+
+    field_keys: list[str] = [
+        "Address",
+        "Yield",
+        "Split"
+    ]
+
+    try:
+        with open(DATA_FILE_PATH) as file:
+
+            data_file   = file.read().splitlines()
+            first_iter  = True
+            data_fields = [ ]
+
+            data = [ ]
+
+            for line in reader(data_file):
+
+                object = { }
+
+                if first_iter:
+
+                    for key in line:
+
+                        if key in field_keys:
+
+                            data_fields.append(key.lower())
+
+                            continue
+
+                        data_fields.append(key)
+
+                    first_iter = False
+                    continue
+
+                for column in line:
+
+                    idx = line.index(column)
+
+                    if data_fields[idx] == 'address':
+
+                        object[data_fields[idx]] = column
+
+                        continue
+
+                    elif column.endswith('%'):
+                        column = column[:-1]
+
+                    object[data_fields[idx]] = Decimal(column)
+
+                data.append(object)
+
+            data_file = data
+
+        DATA_FILE_CONTENTS = data_file
+
+        return True
+
+    except:
+        return False

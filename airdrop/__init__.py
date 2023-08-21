@@ -101,6 +101,13 @@ class I18NSteps():
     print_subtitle   = "Finished airdrop calculations!"
     print_header     = "Total airdrop yield"
 
+    # Input data validation
+    input_meta_validation = "[[info]WORKING[/info]] Validating input metadata file..."
+    input_data_validation = "[[info]WORKING[/info]] Validating input data file..."
+    input_data_success    = "[y]✓[/y] [[success]SUCCESS[/success]] Successfully validated input meta & data files"
+    error_input_meta      = "[n]✗[/n] [[error]FAIL[/error]] Could not validate metadata file due to missing or modified contents. Please try to restore the file's contents back to it's original output state and try again"
+    error_input_data      = "[n]✗[/n] [[error]FAIL[/error]] Could not validate data file due to missing or modified contents. Please try to restore the file's contents back to it's original output state and try again"
+
 @dataclass(frozen=True)
 class I18NRehydrate:
 

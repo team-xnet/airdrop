@@ -12,6 +12,7 @@ from typer         import Exit
 from time          import time
 
 from airdrop.thread import fetch_trustline_balances_threaded
+from airdrop.data   import validate_metadata, validate_data
 from airdrop.xrpl   import fetch_trustlines, get_yielding, get_client, get_issuer, populate_clients, dispose_clients
 from airdrop.calc   import calculate_airdrop_ratio, calculate_yield, increment_airdrop_sum, get_ratio, get_sum
 from airdrop.util   import get_layout_with_renderable
@@ -287,3 +288,33 @@ def step_end_airdrop_calculations():
 
     console.print(get_layout_with_renderable(Padding(results, (6, 6), expand=True)))
     dispose_clients()
+
+
+def step_validate_distribution_inputs():
+    """Validates input meta & data file contents.
+
+    Raises:
+        Exit: If either the metadata or data files are mangled in any way.
+    """
+
+    with console.status(i18n.steps.input_meta_validation, spinner="dots") as status:
+
+        status.start()
+
+        if not validate_metadata():
+
+            console.print(i18n.steps.error_input_meta)
+
+            raise Exit()
+
+        status.update(i18n.steps.input_data_validation)
+
+        if not validate_data():
+
+            console.print(i18n.steps.error_input_data)
+
+            raise Exit()
+
+        status.stop()
+
+    console.print(i18n.steps.input_data_success)
