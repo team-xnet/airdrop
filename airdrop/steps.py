@@ -12,7 +12,7 @@ from typer         import Exit
 from time          import time
 
 from airdrop.thread import fetch_trustline_balances_threaded
-from airdrop.data   import validate_metadata, validate_data
+from airdrop.data   import validate_metadata, validate_data, get_meta, get_data
 from airdrop.xrpl   import fetch_trustlines, get_yielding, get_client, get_issuer, populate_clients, dispose_clients
 from airdrop.calc   import calculate_airdrop_ratio, calculate_yield, increment_airdrop_sum, get_ratio, get_sum
 from airdrop.util   import get_layout_with_renderable
@@ -318,3 +318,26 @@ def step_validate_distribution_inputs():
         status.stop()
 
     console.print(i18n.steps.input_data_success)
+
+
+def step_validate_count():
+
+    meta = get_meta()
+    data = get_data()
+
+    if isinstance(meta, type(None)) or isinstance(data, type(None)):
+        raise Exit()
+
+    with console.status(i18n.steps.validate_filtered, spinner="dots") as status:
+
+        status.start()
+
+        if meta["fetched"] - Decimal(len(data)) != meta["filtered"]:
+
+            console.print(i18n.steps.error_validate_filtered)
+
+            raise Exit()
+
+        console.print(t(i18n.steps.validate_filtered_success, trustlines=meta["fetched"], filtered=meta["filtered"], difference=(meta["fetched"] - meta["filtered"])))
+
+        status.stop()

@@ -4,7 +4,6 @@
 from pathlib import Path
 from decimal import Decimal
 from typing  import Union
-from enum    import Enum
 from csv     import reader
 
 DATA_FILE_CONTENTS: Union[None, dict[str, Decimal]] = None
@@ -56,7 +55,7 @@ def set_meta(data: Path) -> bool:
     return True
 
 
-def get_data() -> Union[None, dict[str, Decimal]]:
+def get_data() -> Union[None, list[dict[str, Union[str, Decimal, tuple[str, Decimal]]]]]:
     """Returns the file contents of the data file.
 
     Returns:

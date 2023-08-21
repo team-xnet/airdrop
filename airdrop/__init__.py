@@ -108,6 +108,11 @@ class I18NSteps():
     error_input_meta      = "[n]✗[/n] [[error]FAIL[/error]] Could not validate metadata file due to missing or modified contents. Please try to restore the file's contents back to it's original output state and try again"
     error_input_data      = "[n]✗[/n] [[error]FAIL[/error]] Could not validate data file due to missing or modified contents. Please try to restore the file's contents back to it's original output state and try again"
 
+    # Actual data validation
+    validate_filtered         = "[[info]WORKING[/info]] Validating filtered trustlines..."
+    validate_filtered_success = Template('[y]✓[/y] [[success]SUCCESS[/success]] Succesfully validated filtered trustlines: [prominent]${trustlines}[/prominent] total trustlines, [prominent]${filtered}[/prominent] filtered with a diffrence of [prominent]${difference}[/prominent]')
+    error_validate_filtered   = "[n]✗[/n] [[error]FAIL[/error]] Filtered trustlines don't match reported difference in metadata"
+
 @dataclass(frozen=True)
 class I18NRehydrate:
 
