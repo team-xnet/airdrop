@@ -7,13 +7,13 @@ from typing  import Union
 from enum    import Enum
 from csv     import reader
 
-DATA_FILE_CONTENTS: Union[None, list[str]] = None
+DATA_FILE_CONTENTS: Union[None, dict[str, Decimal]] = None
 
-META_FILE_CONTENTS: dict[str, Decimal]     = None
+META_FILE_CONTENTS: Union[None, dict[str, Decimal]] = None
 
-DATA_FILE_PATH: Union[None, Path]          = None
+DATA_FILE_PATH: Union[None, Path]                   = None
 
-META_FILE_PATH: Union[None, Path]          = None
+META_FILE_PATH: Union[None, Path]                   = None
 
 
 def set_data(data: Path) -> bool:
@@ -56,26 +56,26 @@ def set_meta(data: Path) -> bool:
     return True
 
 
-def get_data() -> Union[None, Path]:
-    """Returns the filepath information for the data file.
+def get_data() -> Union[None, dict[str, Decimal]]:
+    """Returns the file contents of the data file.
 
     Returns:
-        Union[None, Path]: The current state of the data filepath variable.
+        Union[None, Path]: The current state of the data file.
     """
 
-    global DATA_FILE_PATH
-    return DATA_FILE_PATH
+    global DATA_FILE_CONTENTS
+    return DATA_FILE_CONTENTS
 
 
-def get_meta() -> Union[None, Path]:
-    """Returns the filepath information for the meta file.
+def get_meta() -> Union[None, dict[str, Decimal]]:
+    """Returns the file contents of the metadata file.
 
     Returns:
-        Union[None, Path]: The current state of the meta filepath variable.
+        Union[None, Path]: The current state of the meta file.
     """
 
-    global META_FILE_PATH
-    return META_FILE_PATH
+    global META_FILE_CONTENTS
+    return META_FILE_CONTENTS
 
 
 def validate_metadata() -> bool:
@@ -174,43 +174,42 @@ def validate_data() -> bool:
 
     data_file: Union[None, list[str]] = None
 
-    field_keys: list[str] = [
-        "Address",
-        "Yield",
-        "Split"
-    ]
-
     try:
         with open(DATA_FILE_PATH) as file:
 
-            data_file   = file.read().splitlines()
-            first_iter  = True
-            data_fields = [ ]
+            data_file     = file.read().splitlines()
+            currency_code = None
+            first_iter    = True
+            data          = [ ]
 
-            data = [ ]
+            data_fields = [
+                "address",
+                "currency",
+                "yield",
+                "split"
+            ]
 
-            for line in reader(data_file):
-
-                object = { }
+            for row in reader(data_file):
 
                 if first_iter:
 
-                    for key in line:
-
-                        if key in field_keys:
-
-                            data_fields.append(key.lower())
-
-                            continue
-
-                        data_fields.append(key)
-
                     first_iter = False
+
+                    for label in row:
+
+                        if label.lower() not in data_fields:
+
+                            currency_code = label
+
+                            break
+
                     continue
 
-                for column in line:
+                object = { }
 
-                    idx = line.index(column)
+                for column in row:
+
+                    idx = row.index(column)
 
                     if data_fields[idx] == 'address':
 
@@ -218,10 +217,18 @@ def validate_data() -> bool:
 
                         continue
 
-                    elif column.endswith('%'):
+                    elif data_fields[idx] == 'currency':
+
+                        object[data_fields[idx]] = (currency_code, Decimal(column))
+
+                        continue
+
+                    if column.endswith('%'):
                         column = column[:-1]
 
-                    object[data_fields[idx]] = Decimal(column)
+                    value = Decimal(column)
+
+                    object[data_fields[idx]] = value
 
                 data.append(object)
 
