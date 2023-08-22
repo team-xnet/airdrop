@@ -321,6 +321,11 @@ def step_validate_distribution_inputs():
 
 
 def step_validate_count():
+    """Validates the stored trustline counts.
+
+    Raises:
+        Exit: If the meta or data cannot be fetched, or if the data validation fails.
+    """
 
     meta = get_meta()
     data = get_data()
@@ -341,3 +346,43 @@ def step_validate_count():
         console.print(t(i18n.steps.validate_filtered_success, trustlines=meta["fetched"], filtered=meta["filtered"], difference=(meta["fetched"] - meta["filtered"])))
 
         status.stop()
+
+
+def step_validate_calculations():
+    """Validates the overall sum calculation as declared in the metadata file.
+
+    Raises:
+        Exit: If either meta or data isn't set, or if the calculations fail.
+    """
+
+    meta = get_meta()
+    data = get_data()
+
+    sum   = Decimal()
+    token = None
+
+    with console.status(i18n.steps.validate_calculation, spinner="dots") as status:
+
+        status.start()
+
+        if isinstance(meta, type(None)) or isinstance(data, type(None)):
+            raise Exit()
+
+        for entry in data:
+
+            currency = entry["currency"]
+
+            if isinstance(token, type(None)):
+                token = currency[0]
+
+            sum += currency[1]
+
+        status.stop()
+
+    if sum != meta["sum"]:
+
+            console.print(t(i18n.steps.error_validate_calculation, token=token, expected=meta["sum"], got=sum))
+
+            raise Exit()
+
+    console.print(t(i18n.steps.validate_calculation_success, token=token))

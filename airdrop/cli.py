@@ -6,7 +6,7 @@ from typing  import Optional
 from typer   import Option, Typer, Exit
 
 from airdrop.preflight import preflight_validate_yielding_address, preflight_calculate_remaining_steps, preflight_validate_issuing_address, preflight_validate_supply_balance, preflight_validate_data_path, preflight_fetch_metadata, preflight_validate_output, preflight_print_banner, preflight_check_cache, preflight_confirm
-from airdrop.steps     import step_validate_distribution_inputs, step_begin_airdrop_calculations, step_fetch_trustline_balances, step_calculate_airdrop_yield, step_end_airdrop_calculations, step_fetch_issuer_trustlines, step_validate_count
+from airdrop.steps     import step_validate_distribution_inputs, step_begin_airdrop_calculations, step_fetch_trustline_balances, step_calculate_airdrop_yield, step_end_airdrop_calculations, step_fetch_issuer_trustlines, step_validate_calculations, step_validate_count
 from airdrop.cache     import rehydrate_terms_of_use
 from airdrop           import __app_version__, __app_name__, console
 
@@ -49,6 +49,7 @@ def distribute(
     # Actual distribution procedure
     step_validate_distribution_inputs()
     step_validate_count()
+    step_validate_calculations()
 
 
 @cli.command(help="Runs airdrop calculations for given issuing address trustline holders.")

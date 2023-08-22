@@ -113,6 +113,11 @@ class I18NSteps():
     validate_filtered_success = Template('[y]✓[/y] [[success]SUCCESS[/success]] Succesfully validated filtered trustlines: [prominent]${trustlines}[/prominent] total trustlines, [prominent]${filtered}[/prominent] filtered with a diffrence of [prominent]${difference}[/prominent]')
     error_validate_filtered   = "[n]✗[/n] [[error]FAIL[/error]] Filtered trustlines don't match reported difference in metadata"
 
+    # Validate calculation
+    validate_calculation         = "[[info]WORKING[/info]] Validating airdrop calculations..."
+    validate_calculation_success = Template('[y]✓[/y] [[success]SUCCESS[/success]] Successfully validated [prominent]${token}[/prominent] airdrop calculations')
+    error_validate_calculation   = Template('[n]✗[/n] [[error]FAIL[/error]] Could not validate [prominent]${token}[/prominent] airdrop calculations. Either the data has been corrupted in some way, or the declared metadata sum is wrong. Expected sum to be [prominent]${expected}[/prominent, but got [prominent]${got}[/prominent]')
+
 @dataclass(frozen=True)
 class I18NRehydrate:
 
