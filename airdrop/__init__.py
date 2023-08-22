@@ -22,6 +22,7 @@ CONSOLE_THEME = Theme(
     }
 )
 
+
 @dataclass(frozen=True)
 class I18NPreflight():
 
@@ -74,6 +75,7 @@ class I18NPreflight():
     error_data_invalid = Template('Path "${datapath}" doesn\'t include either the data or the meta file(s). Please make sure you have entered the path correctly, that you have the required permissions to read files within the given path and try again: ')
     error_filepaths    = Template('[n]✗[/n] [[error]FAIL[/error]] Couldn\'t locate [prominent]${filetype}[/prominent] at [prominent]${filepath}[/prominent]. Please make sure the file exists, that you have the required permissions to read the file and that the name hasn\'t been altered.')
 
+
 @dataclass(frozen=True)
 class I18NSteps():
 
@@ -118,11 +120,18 @@ class I18NSteps():
     validate_calculation_success = Template('[y]✓[/y] [[success]SUCCESS[/success]] Successfully validated [prominent]${token}[/prominent] airdrop calculations')
     error_validate_calculation   = Template('[n]✗[/n] [[error]FAIL[/error]] Could not validate [prominent]${token}[/prominent] airdrop calculations. Either the data has been corrupted in some way, or the declared metadata sum is wrong. Expected sum to be [prominent]${expected}[/prominent, but got [prominent]${got}[/prominent]')
 
+    # Validate ratio
+    validate_ratio         = "[[info]WORKING[/info]] Validating airdrop ratio..."
+    validate_ratio_success = Template('[y]✓[/y] [[success]SUCCESS[/success]] Successfully validated [prominent]${token}[/prominent] airdrop ratio')
+    error_validate_ratio   = Template('[n]✗[/n] [[error]FAIL[/error]] Could not validate [prominent]${token}[/prominent] ratio due to either the data being corrupted or the metadata being tampered with. Expected to get ratio [prominent]${expected}[/prominent, but got ratio [prominent]${got}[/prominent]')
+
+
 @dataclass(frozen=True)
 class I18NRehydrate:
 
     metadata_cache = "We detected cached XRPL Meta metadata on disk. Would you like to use the previously cached data? (Y/n): "
     metadata_error = "Please enter either (Y)es or (N)o: "
+
 
 @dataclass(frozen=True)
 class I18NBase():

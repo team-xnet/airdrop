@@ -14,7 +14,7 @@ from time          import time
 from airdrop.thread import fetch_trustline_balances_threaded
 from airdrop.data   import validate_metadata, validate_data, get_meta, get_data
 from airdrop.xrpl   import fetch_trustlines, get_yielding, get_client, get_issuer, populate_clients, dispose_clients
-from airdrop.calc   import calculate_airdrop_ratio, calculate_yield, increment_airdrop_sum, get_ratio, get_sum
+from airdrop.calc   import calculate_airdrop_ratio, calculate_yield, increment_airdrop_sum, get_budget, get_ratio, get_sum
 from airdrop.util   import get_layout_with_renderable
 from airdrop.csv    import generate_metadata, generate_csv, get_csv
 from airdrop        import console, i18n, t
@@ -361,12 +361,12 @@ def step_validate_calculations():
     sum   = Decimal()
     token = None
 
+    if isinstance(meta, type(None)) or isinstance(data, type(None)):
+        raise Exit()
+
     with console.status(i18n.steps.validate_calculation, spinner="dots") as status:
 
         status.start()
-
-        if isinstance(meta, type(None)) or isinstance(data, type(None)):
-            raise Exit()
 
         for entry in data:
 
@@ -386,3 +386,42 @@ def step_validate_calculations():
             raise Exit()
 
     console.print(t(i18n.steps.validate_calculation_success, token=token))
+
+
+def step_validate_ratio():
+
+    budget = get_budget()
+    meta   = get_meta()
+    data   = get_data()
+
+    ratio = Decimal()
+    sum   = Decimal()
+    token = None
+
+    if isinstance(meta, type(None)) or isinstance(data, type(None)):
+        raise Exit()
+
+    with console.status(i18n.steps.validate_ratio, spinner="dots") as status:
+
+        status.start()
+
+        for entry in data:
+
+            currency = entry["currency"]
+
+            if isinstance(token, type(None)):
+                token = currency[0]
+
+            sum += currency[1]
+
+        ratio = budget / sum
+
+        status.stop()
+
+    if ratio != meta["ratio"]:
+
+        console.print(t(i18n.steps.error_validate_ratio, token=token, expected=meta["ratio"], got=ratio))
+
+        raise Exit()
+
+    console.print(t(i18n.steps.validate_ratio_success, token=token))
