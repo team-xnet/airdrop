@@ -1,17 +1,19 @@
 """Operations, otherwise known as steps that the airdrop program has to take to complete it's task."""
 """Author: spunk-developer <xspunk.developer@gmail.com>                                            """
 
-from cache_to_disk import delete_disk_caches_for_function, delete_old_disk_caches
-from rich.prompt   import IntPrompt, Confirm, Prompt
-from rich.text     import Text
-from pathlib       import Path
-from typing        import Union
-from typer         import Exit
-from os            import path
+from xrpl.core.addresscodec import XRPLAddressCodecException, decode_seed
+from cache_to_disk          import delete_disk_caches_for_function, delete_old_disk_caches
+from rich.prompt            import IntPrompt, Confirm, Prompt
+from rich.text              import Text
+from pathlib                import Path
+from typing                 import Union
+from typer                  import Exit
+from os                     import path
 
 from airdrop.cache import accept_terms_of_use, get_terms_of_use
 from airdrop.calc  import set_airdrop_budget, get_budget
 from airdrop.data  import set_data, set_meta
+from airdrop.dist  import register_wallet
 from airdrop.xrpl  import update_issuing_metadata, fetch_xrpl_metadata, update_yielding_token, get_yielding, get_issuer
 from airdrop.util  import get_layout_with_renderable
 from airdrop.csv   import set_output_path, is_path_valid, get_csv
@@ -370,7 +372,7 @@ def preflight_validate_output(output_path) -> None:
         raise Exit()
 
 
-def preflight_confirm():
+def preflight_confirm_calculate():
     """Prints all the chosen options into terminal, allowing the user to double check their inputs being right.
 
     Raises:
@@ -412,6 +414,54 @@ def preflight_confirm():
     else:
         console.clear()
 
+
+def preflight_validate_seed(seed: Union[str, None]) -> None:
+    """Validates the input seed address which'll be used for getting the cold wallet.
+
+    Args:
+        seed (Union[str, None]): The input seed, or none.
+
+    Raises:
+        Exit: If the wallet cannot be established for any reason.
+    """
+
+    global REQUIRED_PARAMS_VISITED, REQUIRED_PARAMS_MISSING
+
+    if isinstance(seed, type(None)):
+
+        REQUIRED_PARAMS_VISITED += 1
+
+        user_input = console.input(t(i18n.preflight.enter_seed, step=REQUIRED_PARAMS_VISITED, maximum=REQUIRED_PARAMS_MISSING))
+
+        while True:
+            if type(user_input) is str and len(user_input) >= 1:
+                try:
+                    decode_seed(user_input)
+
+                    seed = user_input
+
+                    break
+
+                except XRPLAddressCodecException:
+                    pass
+
+                except ValueError:
+                    pass
+
+            user_input = console.input(t(i18n.preflight.enter_seed_invalid, seed=user_input))
+
+        console.clear()
+
+    try:
+        decode_seed(seed)
+
+        if not register_wallet(seed):
+
+            raise XRPLAddressCodecException()
+
+    except:
+        console.print(t(i18n.preflight.error_seed, seed=seed))
+        raise Exit()
 
 def preflight_validate_data_path(input_path: Union[Path, None]) -> None:
     """Validates and sets the required datafile paths.

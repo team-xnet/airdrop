@@ -75,6 +75,10 @@ class I18NPreflight():
     error_data_invalid = Template('Path "${datapath}" doesn\'t include either the data or the meta file(s). Please make sure you have entered the path correctly, that you have the required permissions to read files within the given path and try again: ')
     error_filepaths    = Template('[n]✗[/n] [[error]FAIL[/error]] Couldn\'t locate [prominent]${filetype}[/prominent] at [prominent]${filepath}[/prominent]. Please make sure the file exists, that you have the required permissions to read the file and that the name hasn\'t been altered.')
 
+    # Input seed
+    enter_seed         = Template('[prominent](${step}/${maximum})[/prominent] Enter cold wallet seed: ')
+    enter_seed_invalid = Template('Wallet seed [prominent]${seed}[/prominent] isn\'t a valid wallet seed, please double check the seed and try again: ')
+    error_seed         = Template('[n]✗[/n] [[error]FAIL[/error]] Seed [prominent]${seed}[/prominent] isn\'t a valid wallet seed. Please check the seed and try again')
 
 @dataclass(frozen=True)
 class I18NSteps():

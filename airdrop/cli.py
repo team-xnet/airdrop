@@ -5,7 +5,7 @@ from pathlib import Path
 from typing  import Optional
 from typer   import Option, Typer, Exit
 
-from airdrop.preflight import preflight_validate_yielding_address, preflight_calculate_remaining_steps, preflight_validate_issuing_address, preflight_validate_supply_balance, preflight_validate_data_path, preflight_fetch_metadata, preflight_validate_output, preflight_print_banner, preflight_check_cache, preflight_confirm
+from airdrop.preflight import preflight_validate_yielding_address, preflight_calculate_remaining_steps, preflight_validate_issuing_address, preflight_validate_supply_balance, preflight_validate_data_path, preflight_fetch_metadata, preflight_validate_output, preflight_validate_seed, preflight_print_banner, preflight_check_cache, preflight_confirm_calculate
 from airdrop.steps     import step_validate_distribution_inputs, step_begin_airdrop_calculations, step_fetch_trustline_balances, step_calculate_airdrop_yield, step_end_airdrop_calculations, step_fetch_issuer_trustlines, step_validate_calculations, step_validate_ratio, step_validate_count
 from airdrop.cache     import rehydrate_terms_of_use
 from airdrop           import __app_version__, __app_name__, console
@@ -27,6 +27,12 @@ def distribute(
         "-b",
         help="Specifies the total airdrop supply budget that was used previously."
     ),
+    seed: Optional[str] = Option(
+        None,
+        "--seed",
+        "-s",
+        help="Specifies the cold wallet seed."
+    ),
     data: Optional[Path] = Option(
         None,
         "--data",
@@ -41,9 +47,12 @@ def distribute(
     rehydrate_terms_of_use()
 
     # Preflight stuff
-    preflight_calculate_remaining_steps(budget, data)
     preflight_print_banner()
+    preflight_check_cache()
+    preflight_calculate_remaining_steps(budget, seed, data)
+    preflight_fetch_metadata()
     preflight_validate_supply_balance(budget)
+    preflight_validate_seed(seed)
     preflight_validate_data_path(data)
 
     # Actual distribution procedure
@@ -97,7 +106,7 @@ def calculate(
     preflight_validate_yielding_address(yielding_address)
     preflight_validate_supply_balance(budget)
     preflight_validate_output(csv)
-    preflight_confirm()
+    preflight_confirm_calculate()
 
     # Main procedure
     step_begin_airdrop_calculations()
