@@ -10,10 +10,13 @@ from decimal       import Decimal
 from typing        import Union
 from typer         import Exit
 from time          import time
+from os            import path
 
 from airdrop.thread import fetch_trustline_balances_threaded
+from airdrop.data   import validate_metadata, validate_data, get_meta, get_data, get_path
+from airdrop.dist   import send_token_payment
 from airdrop.xrpl   import fetch_trustlines, get_yielding, get_client, get_issuer, populate_clients, dispose_clients
-from airdrop.calc   import calculate_airdrop_ratio, calculate_yield, increment_airdrop_sum, get_ratio, get_sum
+from airdrop.calc   import calculate_airdrop_ratio, calculate_yield, increment_airdrop_sum, get_budget, get_ratio, get_sum
 from airdrop.util   import get_layout_with_renderable
 from airdrop.csv    import generate_metadata, generate_csv, get_csv
 from airdrop        import console, i18n, t
@@ -26,7 +29,7 @@ FETCHED_TARGET_TRUSTLINES:  list[str]          = [ ]
 
 INDIVIDUAL_TRUSTILE_YIELD:  dict[str, Decimal] = { }
 
-def step_begin_airdrop_calculations():
+def step_begin_airdrop_calculations() -> None:
     """Prints the beginning message and takes a time snapshot for future timings."""
 
     global AIRDROP_START_TIME
@@ -52,6 +55,30 @@ def step_begin_airdrop_calculations():
     if not populate_clients():
         console.print(i18n.steps.error_clients)
         raise Exit()
+
+
+def step_begin_airdrop_distributions() -> None:
+    """Prints the beginning message and takes a time snapshot for future timings."""
+
+    global AIRDROP_START_TIME
+
+    AIRDROP_START_TIME = time()
+
+    start_marker = Text.assemble(
+        ("B" , "#902EF4"), ("e" , "#7F41FE"), ("g" , "#6C50FF"),
+        ("i" , "#535CFF"), ("n" , "#2E67FF"), ("n" , "#0071FF"),
+        ("i" , "#007AFF"), ("n" , "#0082FF"), ("g ", "#008AFF"),
+                           ("a" , "#0091FF"), ("i" , "#0098FF"),
+        ("r" , "#009EFF"), ("d" , "#00A5FF"), ("r" , "#00ABFF"),
+        ("o" , "#00B0FF"), ("p ", "#00B6FF"),
+        ("d" , "#00BBFF"), ("i" , "#00C0FF"), ("s" , "#00C5FF"),
+        ("t" , "#00CAFF"), ("r" , "#00CFFF"), ("i" , "#00D3FF"),
+        ("b" , "#00D7FF"), ("u" , "#00DCFF"), ("t" , "#00E0FF"),
+        ("i" , "#00E4FF"), ("o" , "#00E8FC"), ("n" , "#00EbF9"),
+        ("." , "#00EFF5"), ("." , "#39F3F2"), ("." , "#57F6F0")
+    )
+
+    console.print(Padding(start_marker, (1, 2)))
 
 
 def step_fetch_issuer_trustlines():
@@ -287,3 +314,219 @@ def step_end_airdrop_calculations():
 
     console.print(get_layout_with_renderable(Padding(results, (6, 6), expand=True)))
     dispose_clients()
+
+
+def step_validate_distribution_inputs():
+    """Validates input meta & data file contents.
+
+    Raises:
+        Exit: If either the metadata or data files are mangled in any way.
+    """
+
+    with console.status(i18n.steps.input_meta_validation, spinner="dots") as status:
+
+        status.start()
+
+        if not validate_metadata():
+
+            console.print(i18n.steps.error_input_meta)
+
+            raise Exit()
+
+        status.update(i18n.steps.input_data_validation)
+
+        if not validate_data():
+
+            console.print(i18n.steps.error_input_data)
+
+            raise Exit()
+
+        status.stop()
+
+    console.print(i18n.steps.input_data_success)
+
+
+def step_validate_count():
+    """Validates the stored trustline counts.
+
+    Raises:
+        Exit: If the meta or data cannot be fetched, or if the data validation fails.
+    """
+
+    meta = get_meta()
+    data = get_data()
+
+    if isinstance(meta, type(None)) or isinstance(data, type(None)):
+        raise Exit()
+
+    with console.status(i18n.steps.validate_filtered, spinner="dots") as status:
+
+        status.start()
+
+        if meta["fetched"] - Decimal(len(data)) != meta["filtered"]:
+
+            console.print(i18n.steps.error_validate_filtered)
+
+            raise Exit()
+
+        console.print(t(i18n.steps.validate_filtered_success, trustlines=meta["fetched"], filtered=meta["filtered"], difference=(meta["fetched"] - meta["filtered"])))
+
+        status.stop()
+
+
+def step_validate_calculations():
+    """Validates the overall sum calculation as declared in the metadata file.
+
+    Raises:
+        Exit: If either meta or data isn't set, or if the calculations fail.
+    """
+
+    meta = get_meta()
+    data = get_data()
+
+    sum   = Decimal()
+    token = None
+
+    if isinstance(meta, type(None)) or isinstance(data, type(None)):
+        raise Exit()
+
+    with console.status(i18n.steps.validate_calculation, spinner="dots") as status:
+
+        status.start()
+
+        for entry in data:
+
+            currency = entry["currency"]
+
+            if isinstance(token, type(None)):
+                token = currency[0]
+
+            sum += currency[1]
+
+        status.stop()
+
+    if sum != meta["sum"]:
+
+            console.print(t(i18n.steps.error_validate_calculation, token=token, expected=meta["sum"], got=sum))
+
+            raise Exit()
+
+    console.print(t(i18n.steps.validate_calculation_success, token=token))
+
+
+def step_validate_ratio():
+
+    budget = get_budget()
+    meta   = get_meta()
+    data   = get_data()
+
+    ratio = Decimal()
+    sum   = Decimal()
+    token = None
+
+    if isinstance(meta, type(None)) or isinstance(data, type(None)):
+        raise Exit()
+
+    with console.status(i18n.steps.validate_ratio, spinner="dots") as status:
+
+        status.start()
+
+        for entry in data:
+
+            currency = entry["currency"]
+
+            if isinstance(token, type(None)):
+                token = currency[0]
+
+            sum += currency[1]
+
+        ratio = budget / sum
+
+        status.stop()
+
+    if ratio != meta["ratio"]:
+
+        console.print(t(i18n.steps.error_validate_ratio, token=token, expected=meta["ratio"], got=ratio))
+
+        raise Exit()
+
+    console.print(t(i18n.steps.validate_ratio_success, token=token))
+
+
+def step_distribute_airdrop():
+    """Distributes actual airdrop amount based on the input data.
+    """
+
+    global AIRDROP_START_TIME
+
+    issuer, currency = get_yielding()
+    data             = get_data()
+    name             = None
+    id               = None
+
+    if not isinstance(currency, type(None)):
+        id, name = currency
+
+    elif issuer.lower() == "xrp":
+        id = "XRP"
+
+    if isinstance(name, type(None)):
+        name = id
+
+    failed = [ ]
+
+    with console.status(None, spinner="dots") as status:
+
+        status.start()
+
+        for entry in data:
+
+            destination = entry["address"]
+            amount      = entry["yield"]
+
+            status.update(t(i18n.steps.distribute_working, amount=amount, token=name, destination=destination))
+
+            if not send_token_payment(destination, (issuer, id, amount)):
+
+                failed.append(
+                    {
+                        "destination": destination,
+                        "amount": amount
+                    }
+                )
+
+                console.print(t(i18n.steps.distribute_error, amount=amount, token=name, destination=destination))
+
+                continue
+
+            console.print(t(i18n.steps.distribute_success, amount=amount, token=name, destination=destination))
+
+        status.stop()
+
+    console.clear()
+
+    if len(failed) >= 1:
+
+        log_path = path.abspath(path.normpath(f'{ get_path() }{ path.sep }distribute_failure.csv'))
+
+        console.print(t(i18n.steps.distribute_warn, token=name, amount=len(failed), log=log_path))
+
+        headers = [
+            "destination",
+            "amount"
+        ]
+
+        if not generate_csv(log_path, headers, failed):
+
+            table = Table(title=i18n.steps.summary_table_header)
+
+            table.add_column("Destination")
+            table.add_column("Amount")
+
+            for entry in failed:
+                table.add_row(entry["destination"], str(entry["amount"]))
+
+            console.print(table)
+
+    console.print(Padding(f'Finished distribution in [prominent]{ str(timedelta(seconds=int(time() - AIRDROP_START_TIME))) }[/prominent]!', (1, 2)))
+

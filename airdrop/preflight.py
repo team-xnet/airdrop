@@ -1,15 +1,19 @@
 """Operations, otherwise known as steps that the airdrop program has to take to complete it's task."""
 """Author: spunk-developer <xspunk.developer@gmail.com>                                            """
 
-from cache_to_disk import delete_disk_caches_for_function, delete_old_disk_caches
-from rich.prompt   import IntPrompt, Confirm, Prompt
-from rich.text     import Text
-from typing        import Union
-from typer         import Exit
-from os            import path
+from xrpl.core.addresscodec import XRPLAddressCodecException, decode_seed
+from cache_to_disk          import delete_disk_caches_for_function, delete_old_disk_caches
+from rich.prompt            import IntPrompt, Confirm, Prompt
+from rich.text              import Text
+from pathlib                import Path
+from typing                 import Union
+from typer                  import Exit
+from os                     import path
 
 from airdrop.cache import accept_terms_of_use, get_terms_of_use
 from airdrop.calc  import set_airdrop_budget, get_budget
+from airdrop.data  import set_data, set_meta, set_path, get_path
+from airdrop.dist  import register_wallet, get_wallet
 from airdrop.xrpl  import update_issuing_metadata, fetch_xrpl_metadata, update_yielding_token, get_yielding, get_issuer
 from airdrop.util  import get_layout_with_renderable
 from airdrop.csv   import set_output_path, is_path_valid, get_csv
@@ -36,7 +40,9 @@ def preflight_calculate_remaining_steps(*args) -> None:
 
 
 def preflight_check_cache() -> None:
-    """Confirms with user if they want to use pre-existing cache or not."""
+    """Confirms with user if they want to use pre-existing cache or not.
+    """
+
     delete_old_disk_caches()
 
     if not isinstance(fetch_xrpl_metadata.cache_size(), type(None)):
@@ -338,10 +344,10 @@ def preflight_validate_output(output_path) -> None:
         choice = int(IntPrompt.ask(i18n.preflight.choose_path, choices=[ "1", "2", "3" ]))
 
         if choice == 1:
-            output_path = path.expanduser("~/Desktop")
+            output_path = path.expanduser(f'~{ path.sep }Desktop')
 
         elif choice == 2:
-            output_path = path.expanduser("~/Documents")
+            output_path = path.expanduser(f'~{ path.sep }Documents')
 
         elif choice == 3:
             user_path = Prompt.ask(i18n.preflight.custom_path, default="", show_default=False)
@@ -353,7 +359,7 @@ def preflight_validate_output(output_path) -> None:
         if output_path.startswith("~"):
             output_path = path.expanduser(output_path)
 
-        output_path = path.normpath(path.abspath(output_path))
+        output_path = path.abspath(path.normpath(output_path))
 
         # We kill the whole thing if the path can't be validated.
         if not is_path_valid(output_path):
@@ -366,7 +372,7 @@ def preflight_validate_output(output_path) -> None:
         raise Exit()
 
 
-def preflight_confirm():
+def preflight_confirm_calculate() -> None:
     """Prints all the chosen options into terminal, allowing the user to double check their inputs being right.
 
     Raises:
@@ -401,9 +407,155 @@ def preflight_confirm():
 
     final_budget = f'{ budget }'
 
-    confirm = Confirm.ask(t(i18n.preflight.confirm_preflight, issuing=final_issuing, yielding=final_yielding, budget=final_budget, csv=csv), default=True)
+    confirm = Confirm.ask(t(i18n.preflight.confirm_preflight_calculate, issuing=final_issuing, yielding=final_yielding, budget=final_budget, csv=csv), default=True)
 
     if confirm is not True:
         raise Exit()
     else:
         console.clear()
+
+
+def preflight_confirm_distribte() -> None:
+    """Prints all chosen distribution options into console.
+
+    Raises:
+        Exit: If user didn't accept the choices.
+    """
+
+    issuer, currency = get_yielding()
+    wallet           = get_wallet()
+    filepaths        = get_path()
+
+    token_name = None
+    token_id   = None
+
+    if not isinstance(currency, type(None)):
+        token_id, token_name = currency
+
+    final_filepaths = f'{ path.abspath(path.normpath(filepaths)) }'
+    final_wallet    = f'{ wallet.classic_address } ({ "*" * len(wallet.seed) })'
+    final_token     = f'{ token_id } ({ issuer })'
+
+    if not isinstance(token_name, type(None)):
+        final_token = f'{ token_id } ({ token_name })'
+
+
+    user_input = console.input(get_layout_with_renderable(Text(t(i18n.preflight.confirm_preflight_distribute, token=final_token, wallet=final_wallet, filepaths=final_filepaths))))
+
+    while True:
+
+        if len(user_input) == 0 or user_input.lower() == "yes" or user_input.lower() == "y":
+            break
+
+        if user_input.lower() == "no" or user_input.lower() == "n":
+
+            raise Exit()
+
+        user_input = console.input(i18n.rehydrate.metadata_error)
+
+    console.clear()
+
+def preflight_validate_seed(seed: Union[str, None]) -> None:
+    """Validates the input seed address which'll be used for getting the cold wallet.
+
+    Args:
+        seed (Union[str, None]): The input seed, or none.
+
+    Raises:
+        Exit: If the wallet cannot be established for any reason.
+    """
+
+    global REQUIRED_PARAMS_VISITED, REQUIRED_PARAMS_MISSING
+
+    if isinstance(seed, type(None)):
+
+        REQUIRED_PARAMS_VISITED += 1
+
+        user_input = console.input(t(i18n.preflight.enter_seed, step=REQUIRED_PARAMS_VISITED, maximum=REQUIRED_PARAMS_MISSING))
+
+        while True:
+            if type(user_input) is str and len(user_input) >= 1:
+                try:
+                    decode_seed(user_input)
+
+                    seed = user_input
+
+                    break
+
+                except XRPLAddressCodecException:
+                    pass
+
+                except ValueError:
+                    pass
+
+            user_input = console.input(t(i18n.preflight.enter_seed_invalid, seed=user_input))
+
+        console.clear()
+
+    try:
+        decode_seed(seed)
+
+        if not register_wallet(seed):
+
+            raise XRPLAddressCodecException()
+
+    except:
+        console.print(t(i18n.preflight.error_seed, seed=seed))
+        raise Exit()
+
+def preflight_validate_data_path(input_path: Union[Path, None]) -> None:
+    """Validates and sets the required datafile paths.
+
+    Args:
+        input_path (Union[Path, None]): The actual path itself.
+
+    Raises:
+        Exit: If either the meta or data file(s) don't exist.
+    """
+
+    global REQUIRED_PARAMS_VISITED, REQUIRED_PARAMS_MISSING
+
+    if isinstance(input_path, type(None)):
+
+        REQUIRED_PARAMS_VISITED += 1
+
+        choice = int(IntPrompt.ask(t(i18n.preflight.choose_data, step=REQUIRED_PARAMS_VISITED, maximum=REQUIRED_PARAMS_MISSING), choices=[ "1", "2", "3" ]))
+
+        if choice == 1:
+            input_path = path.expanduser(f'~{ path.sep }Desktop')
+
+        elif choice == 2:
+            input_path = path.expanduser(f'~{ path.sep }Documents')
+
+        elif choice == 3:
+            while True:
+                user_path = console.input(i18n.preflight.enter_data)
+
+                if type(user_path) is str and len(user_path) >= 1:
+
+                    if user_path.startswith('~'):
+                        user_path = path.expanduser(user_path)
+
+                    input_path = path.abspath(path.normpath(user_path))
+
+                    break
+
+                input_path = console.input(t(i18n.preflight.error_data_invalid, datapath=user_path))
+
+
+    meta = Path(input_path, "airdrop_metadata.txt")
+    data = Path(input_path, "airdrop_data.csv")
+
+    if not set_meta(meta):
+        console.print(t(i18n.preflight.error_filepaths, filetype="airdrop_metadata.txt", filepath=meta.absolute()))
+        raise Exit()
+
+    if not set_data(data):
+        console.print(t(i18n.preflight.error_filepaths, filetype="airdrop_data.csv", filepath=data.absolute()))
+        raise Exit()
+
+    if not set_path(input_path):
+        console.print(t(i18n.preflight.error_filepaths, filetype="", filepath=input_path.absolute()))
+        raise Exit()
+
+    console.clear()

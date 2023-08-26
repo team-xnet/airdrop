@@ -17,10 +17,12 @@ CONSOLE_THEME = Theme(
         "error":     "bright_red bold",
         "info":      "bright_blue bold",
         "warn":      "bright_magenta bold",
+        "m":         "yellow",
         "y":         "green",
-        "n":         "red"
+        "n":         "red",
     }
 )
+
 
 @dataclass(frozen=True)
 class I18NPreflight():
@@ -32,7 +34,7 @@ class I18NPreflight():
     # Rendered banner title
     banner_subtitle    = "Made using XRP, Python, and a LOT of coffee by XNET."
     banner_description = "Thank you for using XNET Airdrop! Airdrop is a small utility program built to make the most tedious aspect of initial token distribution (Commonly known as airdropping) easier — The calculation aspect of it. Airdrop will automatically fetch all trustlines set against the desired currency so it can then calculate the total yield per trustline token, which is then finally filtered and organized into a table for you to use as the total distribution table for the distribution itself.\n\n"
-    banner_note        = "Airdrop does NOT require or send any token of any kind. It is just an utility that does the required math for you, and formats the resulting data into an easy-to-use format.\n\n"
+    banner_note        = "Airdro CAN OPTIONALLY send tokens if the user chooses to, however this is NOT required. Distributing tokens based on the generated output data is a separate function of the program.\n\n"
     banner_disclaimer  = "DISCLAIMER: We (XNET and all XNET affiliated entities) are not responsible for any loss of funds, or any damages of any kind that result in the use of this program. We also ask all users to double check all generated output for validity and correctness. We do not guarantee the resulting data of any kind being factually correct.\n"
 
     # Metadata fetch
@@ -66,7 +68,19 @@ class I18NPreflight():
     error_empty_path = Template('Path "${path}" is not valid. Please make sure it follows the path specification of your operating system, and that it is not empty!')
 
     # Confirm options
-    confirm_preflight = Template('\n - Issued token: ${issuing}\n - Yield token: ${yielding}\n - Total budget: ${budget}\n - Output CSV & metadata files path: ${csv}\n\nIs this OK?')
+    confirm_preflight_calculate  = Template('\n - Issued token: ${issuing}\n - Yield token: ${yielding}\n - Total budget: ${budget}\n - Output CSV & metadata files path: ${csv}\n\nIs this OK?')
+    confirm_preflight_distribute = Template('\n - Distributed token: ${token}\n - Cold wallet: ${wallet}\n - Input data files path: ${filepaths}\n\nIs this OK? (Y/n):')
+
+    # Input data path
+    choose_data        = Template('[prominent](${step}/${maximum})[/prominent] Where are the input data files located?\n\n1. Desktop\n2. Documents\n3. Custom...\n\nEnter choice')
+    enter_data         = 'Enter the path that includes both meta and data files: '
+    error_data_invalid = Template('Path "${datapath}" doesn\'t include either the data or the meta file(s). Please make sure you have entered the path correctly, that you have the required permissions to read files within the given path and try again: ')
+    error_filepaths    = Template('[n]✗[/n] [[error]FAIL[/error]] Couldn\'t locate [prominent]${filetype}[/prominent] at [prominent]${filepath}[/prominent]. Please make sure the file exists, that you have the required permissions to read the file and that the name hasn\'t been altered.')
+
+    # Input seed
+    enter_seed         = Template('[prominent](${step}/${maximum})[/prominent] Enter cold wallet seed: ')
+    enter_seed_invalid = Template('Wallet seed [prominent]${seed}[/prominent] isn\'t a valid wallet seed, please double check the seed and try again: ')
+    error_seed         = Template('[n]✗[/n] [[error]FAIL[/error]] Seed [prominent]${seed}[/prominent] isn\'t a valid wallet seed. Please check the seed and try again')
 
 @dataclass(frozen=True)
 class I18NSteps():
@@ -95,11 +109,43 @@ class I18NSteps():
     print_subtitle   = "Finished airdrop calculations!"
     print_header     = "Total airdrop yield"
 
+    # Input data validation
+    input_meta_validation = "[[info]WORKING[/info]] Validating input metadata file..."
+    input_data_validation = "[[info]WORKING[/info]] Validating input data file..."
+    input_data_success    = "[y]✓[/y] [[success]SUCCESS[/success]] Successfully validated input meta & data files"
+    error_input_meta      = "[n]✗[/n] [[error]FAIL[/error]] Could not validate metadata file due to missing or modified contents. Please try to restore the file's contents back to it's original output state and try again"
+    error_input_data      = "[n]✗[/n] [[error]FAIL[/error]] Could not validate data file due to missing or modified contents. Please try to restore the file's contents back to it's original output state and try again"
+
+    # Actual data validation
+    validate_filtered         = "[[info]WORKING[/info]] Validating filtered trustlines..."
+    validate_filtered_success = Template('[y]✓[/y] [[success]SUCCESS[/success]] Succesfully validated filtered trustlines: [prominent]${trustlines}[/prominent] total trustlines, [prominent]${filtered}[/prominent] filtered with a diffrence of [prominent]${difference}[/prominent]')
+    error_validate_filtered   = "[n]✗[/n] [[error]FAIL[/error]] Filtered trustlines don't match reported difference in metadata"
+
+    # Validate calculation
+    validate_calculation         = "[[info]WORKING[/info]] Validating airdrop calculations..."
+    validate_calculation_success = Template('[y]✓[/y] [[success]SUCCESS[/success]] Successfully validated [prominent]${token}[/prominent] airdrop calculations')
+    error_validate_calculation   = Template('[n]✗[/n] [[error]FAIL[/error]] Could not validate [prominent]${token}[/prominent] airdrop calculations. Either the data has been corrupted in some way, or the declared metadata sum is wrong. Expected sum to be [prominent]${expected}[/prominent, but got [prominent]${got}[/prominent]')
+
+    # Validate ratio
+    validate_ratio         = "[[info]WORKING[/info]] Validating airdrop ratio..."
+    validate_ratio_success = Template('[y]✓[/y] [[success]SUCCESS[/success]] Successfully validated [prominent]${token}[/prominent] airdrop ratio')
+    error_validate_ratio   = Template('[n]✗[/n] [[error]FAIL[/error]] Could not validate [prominent]${token}[/prominent] ratio due to either the data being corrupted or the metadata being tampered with. Expected to get ratio [prominent]${expected}[/prominent], but got ratio [prominent]${got}[/prominent]')
+
+    # Token distribution
+    distribute_working = Template('[[info]WORKING[/info]] Sending [prominent]${amount} ${token}[/prominent] to [prominent]${destination}[/prominent]...')
+    distribute_success = Template('[y]✓[/y] [[success]SUCCESS[/success]] Successfully sent [prominent]${amount} ${token}[/prominent] to [prominent]${destination}[/prominent]')
+    distribute_error = Template('[n]✗[/n] [[error]FAIL[/error]] Could not send [prominent]${amount} ${token}[/prominent] to [prominent]${destination}[/prominent]')
+    distribute_warn  = Template('[m]![/m] [[warn]WARNING[/warn]] Failed sending [prominent]${token}[/prominent] to [prominent]${amount}[/prominent] trustlines. Failed trustline information has been saved in [prominent]${log}[/prominent]')
+
+    # Distribution summary
+    summary_table_header = "Failed Distribution Trustlines"
+
 @dataclass(frozen=True)
 class I18NRehydrate:
 
     metadata_cache = "We detected cached XRPL Meta metadata on disk. Would you like to use the previously cached data? (Y/n): "
     metadata_error = "Please enter either (Y)es or (N)o: "
+
 
 @dataclass(frozen=True)
 class I18NBase():

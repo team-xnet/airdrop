@@ -11,6 +11,7 @@ from airdrop.xrpl import fetch_account_balance, get_available_client, return_cli
 
 TARGET_TOKEN: Union[None, str] = None
 
+
 def fetch_trustline_balance(trustline: str) -> tuple[str, Decimal]:
     """Fetches a single trustline balance in a multithreaded context.
 
@@ -62,6 +63,7 @@ def fetch_trustline_balance(trustline: str) -> tuple[str, Decimal]:
                 sleep(1)
 
     return (trustline, balance)
+
 
 def fetch_trustline_balances_threaded(token: str, trustlines: list[str]) -> dict[str, Decimal]:
     """Sets up a multithreaded context for fetching trustline balances from the XRPL.

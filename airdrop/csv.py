@@ -10,6 +10,7 @@ from os      import environ, lstat, path
 
 CSV_OUTPUT_PATH: Union[None, str] = None
 
+
 def set_output_path(path: str) -> bool:
     """Sets the CSV file output path to given input.
 
@@ -122,7 +123,7 @@ def generate_csv(output_path: str, headers: list[str], data: list[dict]) -> bool
     if output_path.endswith(path.sep):
         output_path = f'{ path }airdrop_data.csv'
 
-    elif not  output_path.endswith(".csv"):
+    elif not output_path.endswith(".csv"):
         output_path = f'{ output_path + path.sep }airdrop_data.csv'
 
     try:
