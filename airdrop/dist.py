@@ -5,7 +5,7 @@ from xrpl.models.amounts.issued_currency_amount import IssuedCurrencyAmount
 from xrpl.clients.json_rpc_client               import JsonRpcClient
 from xrpl.models.transactions                   import Payment
 from xrpl.core.addresscodec                     import is_valid_classic_address
-from xrpl.transaction                           import submit_and_wait
+from xrpl.transaction                           import autofill_and_sign, submit_and_wait
 from xrpl.wallet                                import Wallet
 from xrpl.utils                                 import xrp_to_drops
 from decimal                                    import Decimal
@@ -15,6 +15,7 @@ ACTIVE_WALLET: Union[None, Wallet]        = None
 
 XRPL_CLIENT:   Union[None, JsonRpcClient] = None
 
+from airdrop import console
 
 def get_client() -> JsonRpcClient:
     """Similar to `xrpl.get_client()` function, except it returns a JSON-RPC client instead.
@@ -28,7 +29,7 @@ def get_client() -> JsonRpcClient:
     if isinstance(XRPL_CLIENT, type(None)):
 
         # @TODO(spunk-developer): Once it's release time change this to production URL!
-        XRPL_CLIENT = JsonRpcClient("https://s.altnet.rippletest.net:51234/")
+        XRPL_CLIENT = JsonRpcClient("https://s.altnet.rippletest.net:51234")
 
     return XRPL_CLIENT
 
@@ -96,6 +97,12 @@ def send_token_payment(destination: str, transaction: tuple[str, str, Decimal]) 
 
         if token.lower() == "xrp":
             request = Payment(destination=destination, account=wallet.address, amount=xrp_to_drops(amount))
+            request  = autofill_and_sign(request, client, wallet)
+
+            response = submit_and_wait(request, client)
+
+            if not response.is_successful():
+                return False
 
         else:
             request = Payment(
@@ -108,10 +115,10 @@ def send_token_payment(destination: str, transaction: tuple[str, str, Decimal]) 
                 )
             )
 
-        response = submit_and_wait(request, client, wallet)
+            response = submit_and_wait(request, client, wallet)
 
-        if not response.is_successful():
-            return False
+            if not response.is_successful():
+                return False
 
         return True
 

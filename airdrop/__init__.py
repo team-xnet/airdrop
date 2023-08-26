@@ -129,7 +129,7 @@ class I18NSteps():
     # Validate ratio
     validate_ratio         = "[[info]WORKING[/info]] Validating airdrop ratio..."
     validate_ratio_success = Template('[y]✓[/y] [[success]SUCCESS[/success]] Successfully validated [prominent]${token}[/prominent] airdrop ratio')
-    error_validate_ratio   = Template('[n]✗[/n] [[error]FAIL[/error]] Could not validate [prominent]${token}[/prominent] ratio due to either the data being corrupted or the metadata being tampered with. Expected to get ratio [prominent]${expected}[/prominent, but got ratio [prominent]${got}[/prominent]')
+    error_validate_ratio   = Template('[n]✗[/n] [[error]FAIL[/error]] Could not validate [prominent]${token}[/prominent] ratio due to either the data being corrupted or the metadata being tampered with. Expected to get ratio [prominent]${expected}[/prominent], but got ratio [prominent]${got}[/prominent]')
 
     # Token distribution
     distribute_working = Template('[[info]WORKING[/info]] Sending [prominent]${amount} ${token}[/prominent] to [prominent]${destination}[/prominent]...')

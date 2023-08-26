@@ -422,11 +422,15 @@ def preflight_confirm_distribte() -> None:
         Exit: If user didn't accept the choices.
     """
 
-    issuer, currency = get_issuer()
+    issuer, currency = get_yielding()
     wallet           = get_wallet()
     filepaths        = get_path()
 
-    token_id, token_name = currency
+    token_name = None
+    token_id   = None
+
+    if not isinstance(currency, type(None)):
+        token_id, token_name = currency
 
     final_filepaths = f'{ path.abspath(path.normpath(filepaths)) }'
     final_wallet    = f'{ wallet.classic_address } ({ "*" * len(wallet.seed) })'

@@ -435,10 +435,16 @@ def step_distribute_airdrop():
 
     console.clear()
 
-    issuer, currency = get_issuer()
+    issuer, currency = get_yielding()
     data             = get_data()
+    name             = None
+    id               = None
 
-    id, name = currency
+    if not isinstance(currency, type(None)):
+        id, name = currency
+
+    elif issuer.lower() == "xrp":
+        id = "XRP"
 
     if isinstance(name, type(None)):
         name = id

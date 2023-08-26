@@ -57,7 +57,7 @@ def distribute(
     preflight_print_banner()
     preflight_calculate_remaining_steps(issuing_address, budget, seed, data)
     preflight_fetch_metadata()
-    preflight_validate_issuing_address(issuing_address)
+    preflight_validate_yielding_address(issuing_address)
     preflight_validate_supply_balance(budget)
     preflight_validate_seed(seed)
     preflight_validate_data_path(data)
