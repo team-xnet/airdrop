@@ -3,6 +3,7 @@
 
 from xrpl.clients.json_rpc_client import JsonRpcClient
 from xrpl.wallet                  import Wallet
+from decimal                      import Decimal
 from typing                       import Union
 
 ACTIVE_WALLET: Union[None, Wallet]        = None
@@ -60,3 +61,11 @@ def register_wallet(seed: str) -> bool:
 
     except:
         return False
+
+
+
+def send_token_payment(destination: str, transaction: tuple[str, str, Decimal]) -> bool:
+
+    client = get_client()
+
+    return True

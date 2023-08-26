@@ -12,8 +12,8 @@ from os                     import path
 
 from airdrop.cache import accept_terms_of_use, get_terms_of_use
 from airdrop.calc  import set_airdrop_budget, get_budget
-from airdrop.data  import set_data, set_meta
-from airdrop.dist  import register_wallet
+from airdrop.data  import set_data, set_meta, get_path
+from airdrop.dist  import register_wallet, get_wallet
 from airdrop.xrpl  import update_issuing_metadata, fetch_xrpl_metadata, update_yielding_token, get_yielding, get_issuer
 from airdrop.util  import get_layout_with_renderable
 from airdrop.csv   import set_output_path, is_path_valid, get_csv
@@ -372,7 +372,7 @@ def preflight_validate_output(output_path) -> None:
         raise Exit()
 
 
-def preflight_confirm_calculate():
+def preflight_confirm_calculate() -> None:
     """Prints all the chosen options into terminal, allowing the user to double check their inputs being right.
 
     Raises:
@@ -407,13 +407,40 @@ def preflight_confirm_calculate():
 
     final_budget = f'{ budget }'
 
-    confirm = Confirm.ask(t(i18n.preflight.confirm_preflight, issuing=final_issuing, yielding=final_yielding, budget=final_budget, csv=csv), default=True)
+    confirm = Confirm.ask(t(i18n.preflight.confirm_preflight_calculate, issuing=final_issuing, yielding=final_yielding, budget=final_budget, csv=csv), default=True)
 
     if confirm is not True:
         raise Exit()
     else:
         console.clear()
 
+
+def preflight_confirm_distribte() -> None:
+    """Prints all chosen distribution options into console.
+
+    Raises:
+        Exit: If user didn't accept the choices.
+    """
+
+    issuer, currency = get_issuer()
+    wallet           = get_wallet()
+    filepaths        = get_path()
+
+    token_id, token_name = currency
+
+    final_filepaths = f'{ path.abspath(path.normpath(filepaths)) }'
+    final_wallet    = f'{ wallet.classic_address } ({ "*" * len(wallet.seed) })'
+    final_token     = f'{ token_id }({ issuer })'
+
+    if not isinstance(token_name, type(None)):
+        final_token = f'{ token_id }({ token_name })'
+
+    confirm = Confirm.ask(t(i18n.preflight.confirm_preflight_distribute, token=final_token, wallet=final_wallet, filepaths=final_filepaths), default=True)
+
+    if confirm is not True:
+        raise Exit()
+    else:
+        console.clear()
 
 def preflight_validate_seed(seed: Union[str, None]) -> None:
     """Validates the input seed address which'll be used for getting the cold wallet.
@@ -506,12 +533,12 @@ def preflight_validate_data_path(input_path: Union[Path, None]) -> None:
     meta = Path(input_path, "airdrop_metadata.txt")
     data = Path(input_path, "airdrop_data.csv")
 
-    if not set_data(data):
-        console.print(t(i18n.preflight.error_filepaths, filetype="airdrop_data.csv", filepath=data.absolute()))
-        raise Exit()
-
     if not set_meta(meta):
         console.print(t(i18n.preflight.error_filepaths, filetype="airdrop_metadata.txt", filepath=meta.absolute()))
+        raise Exit()
+
+    if not set_data(data):
+        console.print(t(i18n.preflight.error_filepaths, filetype="airdrop_data.csv", filepath=data.absolute()))
         raise Exit()
 
     console.clear()

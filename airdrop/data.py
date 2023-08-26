@@ -15,6 +15,17 @@ DATA_FILE_PATH: Union[None, Path]                   = None
 META_FILE_PATH: Union[None, Path]                   = None
 
 
+def get_path() -> Union[None, Path]:
+    """Returns the data file path.
+
+    Returns:
+        Union[None, Path]: Data file path current state.
+    """
+
+    global DATA_FILE_PATH
+    return DATA_FILE_PATH
+
+
 def set_data(data: Path) -> bool:
     """Sets the data file path. Does some existence checks.
 

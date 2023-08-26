@@ -5,7 +5,7 @@ from pathlib import Path
 from typing  import Optional
 from typer   import Option, Typer, Exit
 
-from airdrop.preflight import preflight_validate_yielding_address, preflight_calculate_remaining_steps, preflight_validate_issuing_address, preflight_validate_supply_balance, preflight_validate_data_path, preflight_fetch_metadata, preflight_validate_output, preflight_validate_seed, preflight_print_banner, preflight_check_cache, preflight_confirm_calculate
+from airdrop.preflight import preflight_validate_yielding_address, preflight_calculate_remaining_steps, preflight_validate_issuing_address, preflight_validate_supply_balance, preflight_validate_data_path, preflight_confirm_distribte, preflight_fetch_metadata, preflight_validate_output, preflight_validate_seed, preflight_print_banner, preflight_check_cache, preflight_confirm_calculate
 from airdrop.steps     import step_validate_distribution_inputs, step_begin_airdrop_calculations, step_fetch_trustline_balances, step_calculate_airdrop_yield, step_end_airdrop_calculations, step_fetch_issuer_trustlines, step_validate_calculations, step_validate_ratio, step_validate_count
 from airdrop.cache     import rehydrate_terms_of_use
 from airdrop           import __app_version__, __app_name__, console
@@ -21,6 +21,12 @@ def get_version(value: bool) -> None:
 
 @cli.command(help="Parses and distributes calculated airdrop yield to given trustline addresses.")
 def distribute(
+    issuing_address: Optional[str] = Option(
+        None,
+        "--issuing-address",
+        "-i",
+        help="Specifies the issuing address for the distributed token.",
+    ),
     budget: Optional[float] = Option(
         None,
         "--budget",
@@ -47,13 +53,15 @@ def distribute(
     rehydrate_terms_of_use()
 
     # Preflight stuff
-    preflight_print_banner()
     preflight_check_cache()
-    preflight_calculate_remaining_steps(budget, seed, data)
+    preflight_print_banner()
+    preflight_calculate_remaining_steps(issuing_address, budget, seed, data)
     preflight_fetch_metadata()
+    preflight_validate_issuing_address(issuing_address)
     preflight_validate_supply_balance(budget)
     preflight_validate_seed(seed)
     preflight_validate_data_path(data)
+    preflight_confirm_distribte()
 
     # Actual distribution procedure
     step_validate_distribution_inputs()
