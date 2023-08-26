@@ -68,7 +68,7 @@ class I18NPreflight():
 
     # Confirm options
     confirm_preflight_calculate  = Template('\n - Issued token: ${issuing}\n - Yield token: ${yielding}\n - Total budget: ${budget}\n - Output CSV & metadata files path: ${csv}\n\nIs this OK?')
-    confirm_preflight_distribute = Template('\n - Distributed token: ${token}\n - Cold wallet: ${wallet}\n - Input data files path: ${filepaths}\n\nIs this OK?')
+    confirm_preflight_distribute = Template('\n - Distributed token: ${token}\n - Cold wallet: ${wallet}\n - Input data files path: ${filepaths}\n\nIs this OK? (Y/n):')
 
     # Input data path
     choose_data        = Template('[prominent](${step}/${maximum})[/prominent] Where are the input data files located?\n\n1. Desktop\n2. Documents\n3. Custom...\n\nEnter choice')

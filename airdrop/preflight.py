@@ -430,17 +430,26 @@ def preflight_confirm_distribte() -> None:
 
     final_filepaths = f'{ path.abspath(path.normpath(filepaths)) }'
     final_wallet    = f'{ wallet.classic_address } ({ "*" * len(wallet.seed) })'
-    final_token     = f'{ token_id }({ issuer })'
+    final_token     = f'{ token_id } ({ issuer })'
 
     if not isinstance(token_name, type(None)):
         final_token = f'{ token_id }({ token_name })'
 
-    confirm = Confirm.ask(t(i18n.preflight.confirm_preflight_distribute, token=final_token, wallet=final_wallet, filepaths=final_filepaths), default=True)
 
-    if confirm is not True:
-        raise Exit()
-    else:
-        console.clear()
+    user_input = console.input(get_layout_with_renderable(Text(t(i18n.preflight.confirm_preflight_distribute, token=final_token, wallet=final_wallet, filepaths=final_filepaths))))
+
+    while True:
+
+        if len(user_input) == 0 or user_input.lower() == "yes" or user_input.lower() == "y":
+            break
+
+        if user_input.lower() == "no" or user_input.lower() == "n":
+
+            raise Exit()
+
+        user_input = console.input(i18n.rehydrate.metadata_error)
+
+    console.clear()
 
 def preflight_validate_seed(seed: Union[str, None]) -> None:
     """Validates the input seed address which'll be used for getting the cold wallet.

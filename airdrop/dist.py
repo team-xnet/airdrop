@@ -1,10 +1,14 @@
 """Token distribution.                                 """
 """Author: spunk-developer <xspunk.developer@gmail.com>"""
 
-from xrpl.clients.json_rpc_client import JsonRpcClient
-from xrpl.wallet                  import Wallet
-from decimal                      import Decimal
-from typing                       import Union
+from xrpl.models.amounts.issued_currency_amount import IssuedCurrencyAmount
+from xrpl.clients.json_rpc_client               import JsonRpcClient
+from xrpl.models.transactions                   import Payment
+from xrpl.core.addresscodec                     import is_valid_classic_address
+from xrpl.transaction                           import submit_and_wait
+from xrpl.wallet                                import Wallet
+from decimal                                    import Decimal
+from typing                                     import Union
 
 ACTIVE_WALLET: Union[None, Wallet]        = None
 
@@ -65,7 +69,44 @@ def register_wallet(seed: str) -> bool:
 
 
 def send_token_payment(destination: str, transaction: tuple[str, str, Decimal]) -> bool:
+    """Sends any amount of arbitrary token to `destination` address.
+
+    Args:
+        destination (str): Destination address. Needs to be classic address.
+        transaction (tuple[str, str, Decimal]): Actual transaction.
+
+    Returns:
+        bool: `True` if the request was successful, `False` otherwise.
+    """
 
     client = get_client()
+    wallet = get_wallet()
 
-    return True
+    issuer, token, amount = transaction
+
+    try:
+        is_valid_classic_address(destination)
+
+    except:
+        return False
+
+    try:
+        request = Payment(
+            account=wallet.address,
+            destination=destination,
+            amount=IssuedCurrencyAmount(
+                currency=token,
+                issuer=issuer,
+                value=str(amount)
+            )
+        )
+
+        response = submit_and_wait(request, client, wallet)
+
+        if not response.is_successful():
+            return False
+
+        return True
+
+    except:
+        return False
