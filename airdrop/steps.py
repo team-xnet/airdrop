@@ -29,7 +29,7 @@ FETCHED_TARGET_TRUSTLINES:  list[str]          = [ ]
 
 INDIVIDUAL_TRUSTILE_YIELD:  dict[str, Decimal] = { }
 
-def step_begin_airdrop_calculations():
+def step_begin_airdrop_calculations() -> None:
     """Prints the beginning message and takes a time snapshot for future timings."""
 
     global AIRDROP_START_TIME
@@ -55,6 +55,30 @@ def step_begin_airdrop_calculations():
     if not populate_clients():
         console.print(i18n.steps.error_clients)
         raise Exit()
+
+
+def step_begin_airdrop_distributions() -> None:
+    """Prints the beginning message and takes a time snapshot for future timings."""
+
+    global AIRDROP_START_TIME
+
+    AIRDROP_START_TIME = time()
+
+    start_marker = Text.assemble(
+        ("B" , "#902EF4"), ("e" , "#7F41FE"), ("g" , "#6C50FF"),
+        ("i" , "#535CFF"), ("n" , "#2E67FF"), ("n" , "#0071FF"),
+        ("i" , "#007AFF"), ("n" , "#0082FF"), ("g ", "#008AFF"),
+                           ("a" , "#0091FF"), ("i" , "#0098FF"),
+        ("r" , "#009EFF"), ("d" , "#00A5FF"), ("r" , "#00ABFF"),
+        ("o" , "#00B0FF"), ("p ", "#00B6FF"),
+        ("d" , "#00BBFF"), ("i" , "#00C0FF"), ("s" , "#00C5FF"),
+        ("t" , "#00CAFF"), ("r" , "#00CFFF"), ("i" , "#00D3FF"),
+        ("b" , "#00D7FF"), ("u" , "#00DCFF"), ("t" , "#00E0FF"),
+        ("i" , "#00E4FF"), ("o" , "#00E8FC"), ("n" , "#00EbF9"),
+        ("." , "#00EFF5"), ("." , "#39F3F2"), ("." , "#57F6F0")
+    )
+
+    console.print(Padding(start_marker, (1, 2)))
 
 
 def step_fetch_issuer_trustlines():
@@ -433,7 +457,7 @@ def step_distribute_airdrop():
     """Distributes actual airdrop amount based on the input data.
     """
 
-    console.clear()
+    global AIRDROP_START_TIME
 
     issuer, currency = get_yielding()
     data             = get_data()
@@ -494,8 +518,6 @@ def step_distribute_airdrop():
 
         if not generate_csv(log_path, headers, failed):
 
-            console.clear()
-
             table = Table(title=i18n.steps.summary_table_header)
 
             table.add_column("Destination")
@@ -506,4 +528,5 @@ def step_distribute_airdrop():
 
             console.print(table)
 
+    console.print(Padding(f'Finished distribution in [prominent]{ str(timedelta(seconds=int(time() - AIRDROP_START_TIME))) }[/prominent]!', (1, 2)))
 
