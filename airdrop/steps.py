@@ -193,13 +193,12 @@ def step_end_airdrop_calculations():
     console.clear()
     dispose_clients()
 
-    yielding_metadata = get_yielding()
-    ratio             = get_ratio()
-    path              = get_csv()
-    sum               = get_sum()
+    _, currency = get_yielding()
+    ratio       = get_ratio()
+    path        = get_csv()
+    sum         = get_sum()
 
-    token = yielding_metadata[0]
-    name  = yielding_metadata[1]
+    token, name = currency
 
     if isinstance(name, type(None)):
         name = token
@@ -401,6 +400,9 @@ def step_validate_calculations():
             if isinstance(token, type(None)):
                 token = currency[0]
 
+            if isinstance(currency[1], type(Decimal)):
+                currency[1].normalize()
+
             sum += currency[1]
 
         status.stop()
@@ -437,6 +439,9 @@ def step_validate_ratio():
 
             if isinstance(token, type(None)):
                 token = currency[0]
+
+            if isinstance(currency[1], type(Decimal)):
+                currency[1].normalize()
 
             sum += currency[1]
 

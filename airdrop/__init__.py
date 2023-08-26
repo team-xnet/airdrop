@@ -124,7 +124,7 @@ class I18NSteps():
     # Validate calculation
     validate_calculation         = "[[info]WORKING[/info]] Validating airdrop calculations..."
     validate_calculation_success = Template('[y]✓[/y] [[success]SUCCESS[/success]] Successfully validated [prominent]${token}[/prominent] airdrop calculations')
-    error_validate_calculation   = Template('[n]✗[/n] [[error]FAIL[/error]] Could not validate [prominent]${token}[/prominent] airdrop calculations. Either the data has been corrupted in some way, or the declared metadata sum is wrong. Expected sum to be [prominent]${expected}[/prominent, but got [prominent]${got}[/prominent]')
+    error_validate_calculation   = Template('[n]✗[/n] [[error]FAIL[/error]] Could not validate [prominent]${token}[/prominent] airdrop calculations. Either the data has been corrupted in some way, or the declared metadata sum is wrong. Expected sum to be [prominent]${expected}[/prominent], but got [prominent]${got}[/prominent]')
 
     # Validate ratio
     validate_ratio         = "[[info]WORKING[/info]] Validating airdrop ratio..."

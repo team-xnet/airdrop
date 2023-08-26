@@ -34,7 +34,7 @@ def get_issuer() -> Union[None, tuple[str, Union[None, str]]]:
     return SELECTED_TRUSTLINE
 
 
-def get_yielding() -> Union[None, tuple[str, Union[None, str]]]:
+def get_yielding() -> Union[None, tuple[str, tuple[str, Union[None, str]]]]:
     """Returns the current state for the yielding token.
 
     Returns:
@@ -66,7 +66,7 @@ def update_issuing_metadata(address: str, currency: str) -> bool:
     return True
 
 
-def update_yielding_token(currency: str, name: Union[None, str]) -> bool:
+def update_yielding_token(token: tuple[str, tuple[str, Union[None, str]]]) -> bool:
     """Updates the currency identifier which we use to calculate the total yield per token for the entire airdrop.
 
     Args:
@@ -81,7 +81,7 @@ def update_yielding_token(currency: str, name: Union[None, str]) -> bool:
     if not isinstance(YIELDING_TOKEN, type(None)):
         return False
 
-    YIELDING_TOKEN = (currency, name)
+    YIELDING_TOKEN = token
 
     return True
 

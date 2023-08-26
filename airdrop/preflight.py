@@ -279,7 +279,9 @@ def preflight_validate_yielding_address(address) -> None:
         else:
             token = XRPL_METADATA[address][0]
 
-    if not update_yielding_token(token[0], token[1]):
+    id, name = token
+
+    if not update_yielding_token((address, (id, name))):
         console.print(t(i18n.preflight.error_yielding_overwrite, address=address))
         raise Exit()
 
@@ -430,6 +432,7 @@ def preflight_confirm_distribte() -> None:
     token_id   = None
 
     if not isinstance(currency, type(None)):
+        console.print(currency)
         token_id, token_name = currency
 
     final_filepaths = f'{ path.abspath(path.normpath(filepaths)) }'
