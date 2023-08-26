@@ -8,7 +8,7 @@ from xrpl.core.addresscodec                     import is_valid_classic_address
 from xrpl.transaction                           import autofill_and_sign, submit_and_wait
 from xrpl.wallet                                import Wallet
 from xrpl.utils                                 import xrp_to_drops
-from decimal                                    import Decimal
+from decimal                                    import Decimal, ROUND_DOWN
 from typing                                     import Union
 
 ACTIVE_WALLET: Union[None, Wallet]        = None
@@ -91,9 +91,6 @@ def send_token_payment(destination: str, transaction: tuple[str, str, Decimal]) 
         return False
 
     try:
-
-        request = None
-
         if token.lower() == "xrp":
             request = Payment(destination=destination, account=wallet.address, amount=xrp_to_drops(amount))
             request  = autofill_and_sign(request, client, wallet)
@@ -110,7 +107,7 @@ def send_token_payment(destination: str, transaction: tuple[str, str, Decimal]) 
                 amount=IssuedCurrencyAmount(
                     currency=token,
                     issuer=issuer,
-                    value=str(amount)
+                    value=str(amount.quantize(Decimal('.000001'), rounding=ROUND_DOWN))
                 )
             )
 
