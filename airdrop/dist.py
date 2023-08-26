@@ -28,8 +28,7 @@ def get_client() -> JsonRpcClient:
 
     if isinstance(XRPL_CLIENT, type(None)):
 
-        # @TODO(spunk-developer): Once it's release time change this to production URL!
-        XRPL_CLIENT = JsonRpcClient("https://s.altnet.rippletest.net:51234")
+        XRPL_CLIENT = JsonRpcClient("https://xrplcluster.com/")
 
     return XRPL_CLIENT
 
