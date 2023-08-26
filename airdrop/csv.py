@@ -123,7 +123,7 @@ def generate_csv(output_path: str, headers: list[str], data: list[dict]) -> bool
     if output_path.endswith(path.sep):
         output_path = f'{ path }airdrop_data.csv'
 
-    elif not  output_path.endswith(".csv"):
+    elif not output_path.endswith(".csv"):
         output_path = f'{ output_path + path.sep }airdrop_data.csv'
 
     try:

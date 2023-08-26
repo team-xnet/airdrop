@@ -12,7 +12,7 @@ from os                     import path
 
 from airdrop.cache import accept_terms_of_use, get_terms_of_use
 from airdrop.calc  import set_airdrop_budget, get_budget
-from airdrop.data  import set_data, set_meta, get_path
+from airdrop.data  import set_data, set_meta, set_path, get_path
 from airdrop.dist  import register_wallet, get_wallet
 from airdrop.xrpl  import update_issuing_metadata, fetch_xrpl_metadata, update_yielding_token, get_yielding, get_issuer
 from airdrop.util  import get_layout_with_renderable
@@ -433,7 +433,7 @@ def preflight_confirm_distribte() -> None:
     final_token     = f'{ token_id } ({ issuer })'
 
     if not isinstance(token_name, type(None)):
-        final_token = f'{ token_id }({ token_name })'
+        final_token = f'{ token_id } ({ token_name })'
 
 
     user_input = console.input(get_layout_with_renderable(Text(t(i18n.preflight.confirm_preflight_distribute, token=final_token, wallet=final_wallet, filepaths=final_filepaths))))
@@ -548,6 +548,10 @@ def preflight_validate_data_path(input_path: Union[Path, None]) -> None:
 
     if not set_data(data):
         console.print(t(i18n.preflight.error_filepaths, filetype="airdrop_data.csv", filepath=data.absolute()))
+        raise Exit()
+
+    if not set_path(input_path):
+        console.print(t(i18n.preflight.error_filepaths, filetype="", filepath=input_path.absolute()))
         raise Exit()
 
     console.clear()

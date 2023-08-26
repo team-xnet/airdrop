@@ -14,16 +14,37 @@ DATA_FILE_PATH: Union[None, Path]                   = None
 
 META_FILE_PATH: Union[None, Path]                   = None
 
+BASE_FILE_PATH: Union[None, Path]                   = None
 
-def get_path() -> Union[None, Path]:
-    """Returns the data file path.
+
+def set_path(base_path: Path) -> bool:
+    """Sets the base filepath, which is used for other misc file saving.
+
+    Args:
+        base_path (Path): The base path.
 
     Returns:
-        Union[None, Path]: Data file path current state.
+        bool: `True` if the base path could be set, `False` otherwise.
     """
 
-    global DATA_FILE_PATH
-    return DATA_FILE_PATH
+    global BASE_FILE_PATH
+
+    if not isinstance(BASE_FILE_PATH, type(None)):
+        return False
+
+    BASE_FILE_PATH = base_path
+
+    return True
+
+def get_path() -> Union[None, Path]:
+    """Returns the base file path.
+
+    Returns:
+        Union[None, Path]: Base file path current state.
+    """
+
+    global BASE_FILE_PATH
+    return BASE_FILE_PATH
 
 
 def set_data(data: Path) -> bool:
@@ -46,11 +67,11 @@ def set_data(data: Path) -> bool:
     return True
 
 
-def set_meta(data: Path) -> bool:
+def set_meta(meta: Path) -> bool:
     """Sets the metadata file path. Does some existence checks.
 
     Args:
-        data (Path): The actual metadata file path.
+        meta (Path): The actual metadata file path.
 
     Returns:
         bool: `True` if path can be set, if the file exists and IS a file, `False` otherwise.
@@ -58,10 +79,10 @@ def set_meta(data: Path) -> bool:
 
     global META_FILE_PATH
 
-    if not isinstance(META_FILE_PATH, type(None)) or not data.exists() or not data.is_file():
+    if not isinstance(META_FILE_PATH, type(None)) or not meta.exists() or not meta.is_file():
         return False
 
-    META_FILE_PATH = data
+    META_FILE_PATH = meta
 
     return True
 

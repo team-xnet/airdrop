@@ -10,9 +10,11 @@ from decimal       import Decimal
 from typing        import Union
 from typer         import Exit
 from time          import time
+from os            import path
 
 from airdrop.thread import fetch_trustline_balances_threaded
-from airdrop.data   import validate_metadata, validate_data, get_meta, get_data
+from airdrop.data   import validate_metadata, validate_data, get_meta, get_data, get_path
+from airdrop.dist   import send_token_payment
 from airdrop.xrpl   import fetch_trustlines, get_yielding, get_client, get_issuer, populate_clients, dispose_clients
 from airdrop.calc   import calculate_airdrop_ratio, calculate_yield, increment_airdrop_sum, get_budget, get_ratio, get_sum
 from airdrop.util   import get_layout_with_renderable
@@ -425,3 +427,77 @@ def step_validate_ratio():
         raise Exit()
 
     console.print(t(i18n.steps.validate_ratio_success, token=token))
+
+
+def step_distribute_airdrop():
+    """Distributes actual airdrop amount based on the input data.
+    """
+
+    console.clear()
+
+    issuer, currency = get_issuer()
+    data             = get_data()
+
+    id, name = currency
+
+    if isinstance(name, type(None)):
+        name = id
+
+    failed = [ ]
+
+    with console.status(None, spinner="dots") as status:
+
+        status.start()
+
+        for entry in data:
+
+            destination = entry["address"]
+            amount      = entry["yield"]
+
+            status.update(t(i18n.steps.distribute_working, amount=amount, token=name, destination=destination))
+
+            if not send_token_payment(destination, (issuer, id, amount)):
+
+                failed.append(
+                    {
+                        "destination": destination,
+                        "amount": amount
+                    }
+                )
+
+                console.print(t(i18n.steps.distribute_error, amount=amount, token=name, destination=destination))
+
+                continue
+
+            console.print(t(i18n.steps.distribute_success, amount=amount, token=name, destination=destination))
+
+        status.stop()
+
+    console.clear()
+
+    if len(failed) >= 1:
+
+        log_path = path.abspath(path.normpath(f'{ get_path() }{ path.sep }distribute_failure.csv'))
+
+        console.print(t(i18n.steps.distribute_warn, token=name, amount=len(failed), log=log_path))
+
+        headers = [
+            "destination",
+            "amount"
+        ]
+
+        if not generate_csv(log_path, headers, failed):
+
+            console.clear()
+
+            table = Table(title=i18n.steps.summary_table_header)
+
+            table.add_column("Destination")
+            table.add_column("Amount")
+
+            for entry in failed:
+                table.add_row(entry["destination"], str(entry["amount"]))
+
+            console.print(table)
+
+

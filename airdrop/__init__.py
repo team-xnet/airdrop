@@ -17,8 +17,9 @@ CONSOLE_THEME = Theme(
         "error":     "bright_red bold",
         "info":      "bright_blue bold",
         "warn":      "bright_magenta bold",
+        "m":         "yellow",
         "y":         "green",
-        "n":         "red"
+        "n":         "red",
     }
 )
 
@@ -130,6 +131,14 @@ class I18NSteps():
     validate_ratio_success = Template('[y]✓[/y] [[success]SUCCESS[/success]] Successfully validated [prominent]${token}[/prominent] airdrop ratio')
     error_validate_ratio   = Template('[n]✗[/n] [[error]FAIL[/error]] Could not validate [prominent]${token}[/prominent] ratio due to either the data being corrupted or the metadata being tampered with. Expected to get ratio [prominent]${expected}[/prominent, but got ratio [prominent]${got}[/prominent]')
 
+    # Token distribution
+    distribute_working = Template('[[info]WORKING[/info]] Sending [prominent]${amount} ${token}[/prominent] to [prominent]${destination}[/prominent]...')
+    distribute_success = Template('[y]✓[/y] [[success]SUCCESS[/success]] Successfully sent [prominent]${amount} ${token}[/prominent] to [prominent]${destination}[/prominent]')
+    distribute_error = Template('[n]✗[/n] [[error]FAIL[/error]] Could not send [prominent]${amount} ${token}[/prominent] to [prominent]${destination}[/prominent]')
+    distribute_warn  = Template('[m]![/m] [[warn]WARNING[/warn]] Failed sending [prominent]${token}[/prominent] to [prominent]${amount}[/prominent] trustlines. Failed trustline information has been saved in [prominent]${log}[/prominent]')
+
+    # Distribution summary
+    summary_table_header = "Failed Distribution Trustlines"
 
 @dataclass(frozen=True)
 class I18NRehydrate:

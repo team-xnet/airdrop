@@ -7,6 +7,7 @@ from xrpl.models.transactions                   import Payment
 from xrpl.core.addresscodec                     import is_valid_classic_address
 from xrpl.transaction                           import submit_and_wait
 from xrpl.wallet                                import Wallet
+from xrpl.utils                                 import xrp_to_drops
 from decimal                                    import Decimal
 from typing                                     import Union
 
@@ -67,7 +68,6 @@ def register_wallet(seed: str) -> bool:
         return False
 
 
-
 def send_token_payment(destination: str, transaction: tuple[str, str, Decimal]) -> bool:
     """Sends any amount of arbitrary token to `destination` address.
 
@@ -91,15 +91,22 @@ def send_token_payment(destination: str, transaction: tuple[str, str, Decimal]) 
         return False
 
     try:
-        request = Payment(
-            account=wallet.address,
-            destination=destination,
-            amount=IssuedCurrencyAmount(
-                currency=token,
-                issuer=issuer,
-                value=str(amount)
+
+        request = None
+
+        if token.lower() == "xrp":
+            request = Payment(destination=destination, account=wallet.address, amount=xrp_to_drops(amount))
+
+        else:
+            request = Payment(
+                destination=destination,
+                account=wallet.address,
+                amount=IssuedCurrencyAmount(
+                    currency=token,
+                    issuer=issuer,
+                    value=str(amount)
+                )
             )
-        )
 
         response = submit_and_wait(request, client, wallet)
 
